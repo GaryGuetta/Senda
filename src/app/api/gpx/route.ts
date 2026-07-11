@@ -176,8 +176,9 @@ export type SurfaceFamily = "route" | "sentier" | "rocheux" | "montagne"
 const SURFACE_TO_FAMILY: Record<string, SurfaceFamily> = {
   // Routes & chemins roulants
   paved: "route", asphalt: "route", concrete: "route", paving_stones: "route",
-  cobblestone: "route", sett: "route", compacted: "route", fine_gravel: "route",
-  // Sentiers naturels
+  cobblestone: "route", sett: "route",
+  // Sentiers naturels (pistes, terre, gravier — pas du bitume)
+  compacted: "sentier", fine_gravel: "sentier",
   gravel: "sentier", ground: "sentier", dirt: "sentier", earth: "sentier",
   grass: "sentier", sand: "sentier", clay: "sentier", woodchips: "sentier",
   wood: "sentier", boardwalk: "sentier",
@@ -192,7 +193,7 @@ const SURFACE_TO_FAMILY: Record<string, SurfaceFamily> = {
 const LANDCOVER_TO_FAMILY: Record<string, SurfaceFamily> = {
   "Forêt": "sentier", "Forêt naturelle": "sentier", "Prairie": "sentier",
   "Prairie alpine": "sentier", "Lande": "sentier", "Garrigue / maquis": "sentier",
-  "Terrain agricole": "route", "Zone humide": "rocheux",
+  "Terrain agricole": "sentier", "Zone humide": "rocheux",
   "Roche nue": "rocheux", "Éboulis": "montagne", "Glacier": "montagne",
   "Falaise": "montagne", "Plage / grève": "sentier",
 }
@@ -1017,7 +1018,7 @@ export async function POST(req: NextRequest) {
         // (b) Track grade
         else if (way.tracktype && TRACK_SCORE[way.tracktype] !== undefined) {
           surfaceScore = TRACK_SCORE[way.tracktype]; surfaceLabel = "piste " + way.tracktype
-          family = way.tracktype === "grade1" || way.tracktype === "grade2" ? "route" : "sentier"
+          family = way.tracktype === "grade1" ? "route" : "sentier"
           hasExplicitSurface = true
         }
         // (c) Paved road types → route

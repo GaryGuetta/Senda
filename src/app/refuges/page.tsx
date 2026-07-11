@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import type { LatLngBounds } from "leaflet";
 import { REFUGE_COLORS, REFUGE_LABELS } from "@/components/refugeStyles";
 import RefugeDetail from "@/components/RefugeDetail";
-import { parseGpx, planStages, densify, fetchElevations, routeBbox, haversine, naismith, buildRouteGeojson, detecterEauTrace, WaterFeature, GpxPoint, Stage } from "@/lib/gpxPlan";
+import { parseGpx, planStages, densify, fetchElevations, routeBbox, haversine, naismith, totalAscent, buildRouteGeojson, detecterEauTrace, WaterFeature, GpxPoint, Stage } from "@/lib/gpxPlan";
 import { difficultyColor, scoreLabel, estimateRouteDifficulty } from "@/lib/difficulty";
 import ElevationChart, { HoverInfo } from "@/components/ElevationChart";
 import styles from "./refuges.module.css";
@@ -157,14 +157,14 @@ export default function PlanifierPage() {
   // Route summary: distance, duration, difficulty, water coverage
   const routeInfo = useMemo(() => {
     if (!gpxPoints || gpxPoints.length < 2) return null;
-    let len = 0, asc = 0, maxSlope = 0;
+    let len = 0, maxSlope = 0;
     for (let i = 1; i < gpxPoints.length; i++) {
       const d = haversine(gpxPoints[i-1].lat, gpxPoints[i-1].lon, gpxPoints[i].lat, gpxPoints[i].lon);
       len += d;
       const de = (gpxPoints[i].ele ?? 0) - (gpxPoints[i-1].ele ?? 0);
-      if (de > 0) asc += de;
       if (d > 3) { const sl = Math.abs(de) / d * 100; if (sl > maxSlope && sl < 120) maxSlope = sl; }
     }
+    const asc = totalAscent(gpxPoints.map(p => p.ele));  // smoothed D+ (no noise inflation)
     const distKm = len / 1000;
     const hours = naismith(len, asc, 1);
     const score = estimateRouteDifficulty(distKm, asc, maxSlope);

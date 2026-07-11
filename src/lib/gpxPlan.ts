@@ -30,6 +30,30 @@ export function naismith(distM: number, ascentM: number, level: number): number 
   return distM / (vKmH * 1000) + ascentM / (300 * level);
 }
 
+// Smooth an elevation series (moving average) to remove DEM/GPS noise that
+// otherwise inflates the cumulative ascent (D+). Nulls treated as neighbours.
+export function smoothEles(eles: (number | null)[], win = 4): number[] {
+  const e = eles.map(v => (v == null ? NaN : v));
+  // fill NaNs with nearest valid value
+  let last = 0;
+  for (let i = 0; i < e.length; i++) { if (!isNaN(e[i])) last = e[i]; else e[i] = last; }
+  const out = new Array(e.length);
+  for (let i = 0; i < e.length; i++) {
+    let s = 0, n = 0;
+    for (let j = Math.max(0, i - win); j <= Math.min(e.length - 1, i + win); j++) { s += e[j]; n++; }
+    out[i] = s / n;
+  }
+  return out;
+}
+
+// Realistic cumulative ascent from an elevation series (smoothed + small threshold).
+export function totalAscent(eles: (number | null)[]): number {
+  const sm = smoothEles(eles);
+  let asc = 0;
+  for (let i = 1; i < sm.length; i++) { const de = sm[i] - sm[i-1]; if (de > 0) asc += de; }
+  return Math.round(asc);
+}
+
 export interface OnRoute { refuge: any; projIdx: number; dist: number; climb: number }
 
 // Refuges within `marginM` of the route, with their nearest route index.
@@ -73,11 +97,12 @@ export function planStages(points: GpxPoint[], refuges: any[], opts: PlanOpts): 
     x.climb <= MAX_CLIMB && (opts.mode === "tente" ? true : x.refuge.cat !== "ruine")
   );
 
-  // cumulative distance + segment metrics
+  // cumulative distance + segment metrics (elevations smoothed to avoid noise inflating D+)
+  const smEle = smoothEles(points.map(p => p.ele));
   const segDist: number[] = [0], segAsc: number[] = [0];
   for (let i = 1; i < n; i++) {
     segDist[i] = haversine(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon);
-    const de = (points[i].ele != null && points[i-1].ele != null) ? (points[i].ele! - points[i-1].ele!) : 0;
+    const de = smEle[i] - smEle[i-1];
     segAsc[i] = de > 0 ? de : 0;
   }
   const timeOf = (a: number, b: number) => {
@@ -330,20 +355,21 @@ export async function detecterEauTrace(trace: number[][]): Promise<WaterFeature[
     `way["landuse"="reservoir"](${bbox});` +
     `);out geom tags;`;
 
-  const endpoints = [
-    "https://overpass-api.de/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter",
-    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
-  ];
+  // Go through our own server proxy (reliable connectivity + mirror fallback).
   let data: any = null;
-  for (const url of endpoints) {
-    try {
-      const rep = await fetch(url, { method: "POST", body: "data=" + encodeURIComponent(qFinal), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
-      if (!rep.ok) continue;
-      data = await rep.json(); break;
-    } catch { /* next */ }
-  }
-  if (!data) throw new Error("Overpass injoignable");
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 28000);
+    const rep = await fetch("/api/overpass", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: qFinal }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (rep.ok) data = await rep.json();
+  } catch { /* handled below */ }
+  if (!data || data.error) throw new Error("Overpass injoignable");
 
   const idx = construireIndexTrace(trace, cumul);
   const potables: any[] = [];
