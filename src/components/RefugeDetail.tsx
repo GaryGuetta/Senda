@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import CommentsSection from "@/components/CommentsSection";
-import { REFUGE_COLORS, REFUGE_LABELS } from "./RefugesMap";
+import { REFUGE_COLORS, REFUGE_LABELS } from "./refugeStyles";
 import styles from "./RefugeDetail.module.css";
 
 function fetchTimeout(url: string, opts: RequestInit = {}, ms = 8000): Promise<Response> {

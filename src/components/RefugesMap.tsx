@@ -4,12 +4,7 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { useEffect, Fragment } from "react";
 
-export const REFUGE_COLORS: Record<string, string> = {
-  refuge: "#1B9E4B", libre: "#1E7FE0", cabane: "#F07316", ruine: "#6B7280",
-};
-export const REFUGE_LABELS: Record<string, string> = {
-  refuge: "Refuge gardé", libre: "Cabane ouverte", cabane: "Cabane / abri", ruine: "Ruine",
-};
+import { REFUGE_COLORS, REFUGE_LABELS } from "./refugeStyles";
 
 function pin(cat: string, active: boolean) {
   const color = REFUGE_COLORS[cat] ?? "#8A8578";

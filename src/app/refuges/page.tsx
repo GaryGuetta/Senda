@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import type { LatLngBounds } from "leaflet";
-import { REFUGE_COLORS, REFUGE_LABELS } from "@/components/RefugesMap";
+import { REFUGE_COLORS, REFUGE_LABELS } from "@/components/refugeStyles";
 import RefugeDetail from "@/components/RefugeDetail";
 import { parseGpx, planStages, densify, fetchElevations, routeBbox, haversine, naismith, buildRouteGeojson, detecterEauTrace, WaterFeature, GpxPoint, Stage } from "@/lib/gpxPlan";
 import { difficultyColor, scoreLabel, estimateRouteDifficulty } from "@/lib/difficulty";
