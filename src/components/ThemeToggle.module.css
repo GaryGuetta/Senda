@@ -1,0 +1,17 @@
+.toggle { display: flex; align-items: center; padding: 4px; border-radius: 20px; }
+.placeholder { width: 52px; height: 28px; }
+.track {
+  position: relative; width: 52px; height: 28px; border-radius: 14px;
+  background: var(--sand-2); border: 1px solid var(--line-2);
+  transition: background 0.2s, border-color 0.2s;
+}
+.trackDark { background: #2B3025; border-color: #3C4234; }
+.thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--paper); color: var(--terra);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), color 0.2s;
+}
+.trackDark .thumb { transform: translateX(24px); color: var(--moss); background: #12150F; }

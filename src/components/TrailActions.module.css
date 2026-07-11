@@ -1,0 +1,95 @@
+.card {
+  background: var(--paper); border: 1px solid var(--line);
+  border-radius: 16px; padding: 20px;
+}
+.cardTitle {
+  font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600;
+  color: var(--forest); margin-bottom: 14px;
+}
+
+.rateBtn {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  padding: 13px; border-radius: 11px; background: var(--pine); color: var(--paper);
+  font-size: 14px; font-weight: 600; transition: background 0.15s, transform 0.12s;
+}
+.rateBtn:hover { background: var(--ink); transform: translateY(-1px); }
+
+/* Rating form */
+.form { display: flex; flex-direction: column; gap: 10px; }
+.formHint { font-size: 12px; color: var(--stone); line-height: 1.5; }
+.surfaceRow { display: flex; flex-direction: column; gap: 5px; }
+.surfaceTop { display: flex; align-items: center; gap: 8px; }
+.dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.sLabel { flex: 1; font-size: 13px; font-weight: 500; color: var(--forest); }
+.sVals { display: flex; flex-direction: column; align-items: flex-end; }
+.sVal { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--forest); }
+.sAuto { font-size: 10px; color: var(--stone-light); }
+.slider { width: 100%; }
+
+.total {
+  font-size: 12px; font-weight: 600; color: var(--sage); text-align: center;
+  padding: 7px; border-radius: 8px; background: var(--paper-2);
+}
+.totalWarn { color: var(--terra); }
+
+.diffRow {
+  display: flex; flex-direction: column; gap: 5px;
+  padding-top: 12px; border-top: 1px solid var(--line);
+}
+.comment {
+  width: 100%; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line-2); background: var(--paper);
+  font-size: 13px; color: var(--ink); resize: vertical; line-height: 1.5;
+}
+.comment:focus { outline: none; border-color: var(--sage); box-shadow: 0 0 0 3px rgba(94,122,85,0.12); }
+
+.formBtns { display: flex; gap: 8px; }
+.cancel {
+  flex: 1; padding: 11px; border-radius: 10px; background: var(--sand);
+  color: var(--stone); font-size: 13px; font-weight: 600; transition: background 0.13s;
+}
+.cancel:hover { background: var(--sand-2); }
+.save {
+  flex: 2; padding: 11px; border-radius: 10px; background: var(--pine); color: var(--paper);
+  font-size: 13px; font-weight: 600; transition: background 0.15s;
+}
+.save:hover:not(:disabled) { background: var(--ink); }
+.saved { background: var(--sage); }
+
+/* Publish toggle */
+.publishRow {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 15px; margin-top: 16px;
+  background: var(--paper-2); border-radius: 12px;
+}
+.publishLabel { font-size: 13px; font-weight: 600; color: var(--forest); }
+.publishHint { font-size: 11px; color: var(--stone); margin-top: 2px; }
+.toggle {
+  position: relative; width: 44px; height: 26px; border-radius: 13px;
+  background: var(--stone-light); flex-shrink: 0; transition: background 0.18s;
+}
+.toggle:disabled { opacity: 0.6; }
+.toggleOn { background: var(--sage); }
+.knob {
+  position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+  border-radius: 50%; background: #fff; transition: transform 0.18s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.toggleOn .knob { transform: translateX(18px); }
+
+.deleteBtn {
+  width: 100%; margin-top: 14px; padding: 10px; border-radius: 10px;
+  font-size: 12.5px; font-weight: 500; color: var(--stone);
+  background: transparent; border: 1px solid var(--line); transition: all 0.13s;
+}
+.deleteBtn:hover { color: var(--terra); border-color: rgba(190,95,57,0.4); background: rgba(190,95,57,0.04); }
+
+.confirmRow {
+  margin-top: 14px; padding: 13px; border-radius: 10px;
+  background: rgba(190,95,57,0.06); border: 1px solid rgba(190,95,57,0.25);
+  font-size: 12.5px; color: var(--forest); text-align: center;
+}
+.confirmBtns { display: flex; gap: 8px; margin-top: 10px; }
+.confirmYes { flex: 1; padding: 8px; border-radius: 8px; background: var(--terra); color: #fff; font-size: 12.5px; font-weight: 600; }
+.confirmYes:hover { background: var(--terra-dark); }
+.confirmNo { flex: 1; padding: 8px; border-radius: 8px; background: var(--sand); color: var(--stone); font-size: 12.5px; font-weight: 600; }

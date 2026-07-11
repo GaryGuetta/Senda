@@ -1,0 +1,41 @@
+.page { max-width: 1180px; margin: 0 auto; padding: 34px 24px 64px; width: 100%; }
+@media (max-width: 640px) { .page { padding: 32px 16px 56px; } }
+
+.header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.title { font-size: 29px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+@media (max-width: 640px) { .title { font-size: 29px; } }
+.subtitle { font-size: 15px; color: var(--stone); }
+.importBtn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 20px; border-radius: 11px; font-size: 14px; font-weight: 600;
+  background: var(--terra); color: #fff; transition: background 0.15s, transform 0.12s;
+}
+.importBtn:hover { background: var(--terra-dark); transform: translateY(-1px); }
+
+/* Model insight as a full-width strip above the grid */
+.modelStrip { margin-bottom: 26px; }
+
+/* Responsive grid that fills the whole width — 3-4 cols wide, 2 medium, 1 mobile */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+@media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+
+/* Empty */
+.empty { text-align: center; padding: 60px 28px; display: flex; flex-direction: column; align-items: center; gap: 12px; background: var(--sand); border-radius: 18px; }
+.emptyIllus { width: 68px; height: 68px; }
+.emptyTitle { font-size: 20px; font-weight: 600; color: var(--ink); }
+.emptyText { font-size: 14px; line-height: 1.6; color: var(--stone); max-width: 340px; }
+.emptyBtn { margin-top: 8px; padding: 12px 22px; border-radius: 11px; background: var(--pine); color: var(--paper); font-size: 14px; font-weight: 600; transition: background 0.15s; }
+.emptyBtn:hover { background: var(--ink); }
+
+/* Gate (not logged in) */
+.gate { max-width: 460px; margin: 0 auto; padding: 100px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.gateTitle { font-size: 32px; font-weight: 600; color: var(--ink); }
+.gateText { font-size: 15px; line-height: 1.6; color: var(--stone); }
+.gateBtn { margin-top: 8px; padding: 13px 26px; border-radius: 11px; background: var(--pine); color: var(--paper); font-size: 15px; font-weight: 600; transition: background 0.15s; }
+.gateBtn:hover { background: var(--ink); }
+
+.state { padding: 80px 24px; text-align: center; color: var(--stone); font-size: 15px; }

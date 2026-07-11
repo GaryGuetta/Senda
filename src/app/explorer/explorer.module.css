@@ -1,0 +1,52 @@
+.page { max-width: 1180px; margin: 0 auto; padding: 34px 24px 80px; width: 100%; }
+@media (max-width: 640px) { .page { padding: 32px 16px 56px; } }
+
+.header { margin-bottom: 30px; }
+.title {
+  font-size: 29px; font-weight: 600; color: var(--ink); margin-bottom: 9px;
+  position: relative; padding-bottom: 12px;
+}
+.title::after {
+  content: ""; position: absolute; left: 0; bottom: 0;
+  width: 48px; height: 3px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--terra), var(--sage));
+}
+@media (max-width: 640px) { .title { font-size: 29px; } }
+.subtitle { font-size: 15px; line-height: 1.6; color: var(--stone); max-width: 620px; }
+
+/* Controls */
+.controls { display: flex; flex-direction: column; gap: 14px; margin-bottom: 28px; }
+.search {
+  display: flex; align-items: center; gap: 11px;
+  padding: 13px 16px; border-radius: 12px;
+  background: var(--paper); border: 1px solid var(--line-2);
+}
+.search:focus-within { border-color: var(--sage); }
+.search input { flex: 1; border: none; outline: none; background: transparent; font-size: 15px; color: var(--ink); }
+.search input::placeholder { color: var(--stone-light); }
+
+.filters { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.chipGroup { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: 500;
+  background: var(--sand); color: var(--stone); transition: all 0.13s;
+}
+.chip:hover { background: var(--sand-2); }
+.chipActive { background: var(--terra); color: var(--paper); }
+.chipActive:hover { background: var(--terra-dark); }
+
+.select {
+  padding: 9px 14px; border-radius: 10px; font-size: 13px; font-weight: 500;
+  background: var(--paper); border: 1px solid var(--line-2); color: var(--ink); cursor: pointer;
+}
+
+.count { font-size: 13px; color: var(--stone); margin-bottom: 16px; font-weight: 500; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+@media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
+
+.state { padding: 80px 24px; text-align: center; color: var(--stone); font-size: 15px; }

@@ -1,0 +1,138 @@
+.shell { display: flex; flex-direction: column; min-height: 100%; }
+
+/* ─── Navigation ─── */
+.nav {
+  position: sticky; top: 0; z-index: 1100;
+  background: var(--nav-bg);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.navInner {
+  max-width: 1180px; margin: 0 auto; padding: 0 24px;
+  height: 58px; display: flex; align-items: center; gap: 30px;
+}
+@media (max-width: 640px) { .navInner { padding: 0 16px; gap: 16px; } }
+
+.brand { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+.mark { height: 26px; width: auto; }
+.brandName { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; color: var(--ink); }
+
+.links { display: flex; align-items: center; gap: 4px; flex: 1; }
+@media (max-width: 640px) { .links { gap: 0; } }
+.link {
+  padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  color: var(--stone); transition: color 0.14s, background 0.14s;
+}
+@media (max-width: 640px) { .link { padding: 8px 10px; font-size: 13px; } }
+.link:hover { color: var(--ink); background: var(--sand); }
+.linkActive { color: var(--terra); background: rgba(190,95,57,0.09); font-weight: 600; }
+.linkActive:hover { color: var(--terra-dark); background: rgba(190,95,57,0.12); }
+
+.right { flex-shrink: 0; display: flex; align-items: center; gap: 12px; }
+.loginBtn {
+  padding: 9px 18px; border-radius: 9px; font-size: 14px; font-weight: 500;
+  background: var(--pine); color: var(--paper); transition: background 0.15s;
+}
+.loginBtn:hover { background: var(--ink); }
+
+.userWrap { position: relative; }
+.userChip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px 5px 6px; border-radius: 22px;
+  background: var(--sand); transition: background 0.14s;
+}
+.userChip:hover { background: var(--sand-2); }
+.avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--pine); color: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600;
+}
+.userName { font-size: 14px; font-weight: 500; color: var(--ink); }
+@media (max-width: 480px) { .userName { display: none; } }
+
+.dropdown {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 1200;
+  background: var(--paper); border: 1px solid var(--line);
+  border-radius: 12px; padding: 6px; min-width: 180px;
+  box-shadow: 0 12px 32px rgba(20,36,28,0.12);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.dropdown button {
+  text-align: left; padding: 9px 12px; border-radius: 8px;
+  font-size: 14px; color: var(--ink); transition: background 0.12s;
+}
+.dropdown button:hover { background: var(--sand); }
+.logoutItem { color: var(--terra) !important; }
+
+.main { flex: 1; display: flex; flex-direction: column; }
+
+/* ─── Login modal ─── */
+.overlay {
+  position: fixed; inset: 0; z-index: 3000;
+  background: rgba(22,36,28,0.45); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  animation: fade 0.18s ease;
+}
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+.modal {
+  position: relative; background: var(--paper); border-radius: 18px;
+  width: 100%; max-width: 400px; padding: 32px;
+  box-shadow: 0 24px 70px rgba(22,36,28,0.28);
+  animation: rise 0.22s ease;
+}
+@keyframes rise { from { transform: translateY(10px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+.modalClose {
+  position: absolute; top: 16px; right: 16px;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--stone); background: var(--sand); transition: background 0.13s;
+}
+.modalClose:hover { background: var(--sand-2); }
+.modalTitle { font-size: 22px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+.modalText { font-size: 13px; color: var(--stone); line-height: 1.6; margin-bottom: 22px; }
+.modalForm { display: flex; flex-direction: column; gap: 10px; }
+.modalInput {
+  flex: 1; padding: 12px 15px; border-radius: 10px;
+  border: 1px solid var(--line-2); background: var(--sand);
+  font-size: 15px; color: var(--ink); outline: none; transition: border-color 0.15s;
+}
+.modalInput:focus { border-color: var(--sage); background: var(--paper); }
+.modalBtn {
+  padding: 12px 22px; border-radius: 10px; font-size: 15px; font-weight: 500;
+  background: var(--pine); color: var(--paper); transition: background 0.15s;
+}
+.modalBtn:hover:not(:disabled) { background: var(--ink); }
+.modalBtn:disabled { opacity: 0.5; }
+.modalError { font-size: 13px; color: var(--terra); margin-top: 12px; }
+
+/* ─── Login modal: tabs, password, switch ─── */
+.modalTabs {
+  display: flex; gap: 4px; background: var(--sand); padding: 3px; border-radius: 10px;
+  margin-bottom: 18px; margin-top: 4px;
+}
+.modalTab {
+  flex: 1; padding: 9px; border-radius: 8px; font-size: 13.5px; font-weight: 600;
+  color: var(--stone); transition: all 0.13s;
+}
+.modalTab:hover { color: var(--forest); }
+.modalTabActive { background: var(--paper); color: var(--pine); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+.pwWrap { position: relative; display: flex; align-items: center; }
+.pwWrap .modalInput { width: 100%; padding-right: 42px; }
+.pwToggle {
+  position: absolute; right: 10px; width: 26px; height: 26px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--stone); transition: color 0.13s, background 0.13s;
+}
+.pwToggle:hover { color: var(--forest); background: var(--sand); }
+
+.modalBtn { width: 100%; }
+
+.modalSwitch {
+  margin-top: 16px; text-align: center; font-size: 12.5px; color: var(--stone);
+}
+.modalSwitch button {
+  font-size: 12.5px; font-weight: 600; color: var(--terra); margin-left: 4px;
+}
+.modalSwitch button:hover { color: var(--terra-dark); text-decoration: underline; }

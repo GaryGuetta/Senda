@@ -1,0 +1,168 @@
+.wrap { overflow-y: auto; flex: 1; padding: 18px 20px 30px; display: flex; flex-direction: column; }
+
+.back {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  font-size: 13px; font-weight: 500; color: var(--sage); margin-bottom: 16px;
+}
+.back:hover { color: var(--pine); }
+
+.head { margin-bottom: 16px; }
+.typeBadge { display: inline-block; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 16px; margin-bottom: 10px; }
+.name { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--ink); line-height: 1.15; }
+.region { font-size: 13px; color: var(--stone); margin-top: 4px; }
+
+/* Facts */
+.facts { display: flex; gap: 8px; margin-bottom: 18px; }
+.fact {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 12px 8px; border-radius: 12px; background: var(--paper-2); border: 1px solid var(--line);
+}
+.factVal { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--forest); line-height: 1; }
+.factLbl { font-size: 10.5px; color: var(--stone); margin-top: 5px; }
+
+.section { margin-bottom: 18px; }
+.sectionTitle { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--forest); margin-bottom: 10px; }
+.desc { font-size: 13.5px; line-height: 1.6; color: var(--forest); }
+.muted { font-size: 13px; color: var(--stone); }
+
+/* Weather */
+.wLoading { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--stone); }
+.spin { width: 16px; height: 16px; border: 2px solid var(--line-2); border-top-color: var(--sage); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.wNow {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  background: var(--paper-2); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 10px;
+}
+.wIcon { font-size: 34px; line-height: 1; }
+.wNowText { display: flex; flex-direction: column; flex: 1; }
+.wTemp { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: var(--ink); line-height: 1; }
+.wDesc { font-size: 12.5px; color: var(--stone); margin-top: 3px; }
+.wWind { font-size: 12px; color: var(--stone); font-weight: 500; }
+
+.wDays { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.wDay {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 4px; border-radius: 10px; background: var(--paper-2); border: 1px solid var(--line);
+}
+.wDayName { font-size: 11px; font-weight: 600; color: var(--stone); }
+.wDayIcon { font-size: 18px; line-height: 1; }
+.wDayTemp { font-size: 12px; font-weight: 700; color: var(--forest); }
+.wDayMin { font-size: 11px; font-weight: 500; color: var(--stone-light); margin-left: 3px; }
+
+.link {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--pine); margin-bottom: 16px;
+}
+.link:hover { color: var(--ink); text-decoration: underline; }
+
+.warn {
+  font-size: 11.5px; line-height: 1.5; color: var(--sev-med-text);
+  background: var(--sev-med-bg); border: 1px solid var(--sev-med-border);
+  border-radius: 10px; padding: 11px 13px;
+}
+
+/* Water points */
+.waterList { display: flex; flex-direction: column; gap: 6px; }
+.waterItem {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 10px; background: var(--paper-2); border: 1px solid var(--line);
+}
+.waterIcon { font-size: 15px; }
+.waterType { flex: 1; font-size: 13px; font-weight: 500; color: var(--forest); }
+.waterDist { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 600; color: var(--sage); }
+
+/* ─── Edit info ─── */
+.editRow { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.editBtn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12.5px; font-weight: 600; color: var(--pine);
+  padding: 7px 12px; border-radius: 9px; background: var(--paper-2); border: 1px solid var(--line-2);
+  transition: all 0.13s;
+}
+.editBtn:hover { border-color: var(--sage); background: rgba(94,122,85,0.06); }
+.editedBy { font-size: 11px; color: var(--stone); font-style: italic; }
+
+.editForm { background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 18px; }
+.editGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.editField { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: var(--forest); margin-bottom: 10px; }
+.editField:last-child { margin-bottom: 0; }
+.editField select, .editField input, .editField textarea {
+  font-size: 13px; font-weight: 400; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line-2); border-radius: 8px; padding: 8px 10px; width: 100%; font-family: inherit;
+}
+.editField textarea { resize: vertical; }
+.editField select:focus, .editField input:focus, .editField textarea:focus { outline: none; border-color: var(--sage); }
+.editActions { display: flex; gap: 8px; justify-content: flex-end; }
+.editCancel { font-size: 13px; font-weight: 600; color: var(--stone); padding: 8px 14px; border-radius: 9px; }
+.editCancel:hover { color: var(--forest); }
+.editSave { font-size: 13px; font-weight: 600; color: #fff; background: var(--pine); padding: 8px 16px; border-radius: 9px; }
+.editSave:hover:not(:disabled) { background: var(--ink); }
+.editSave:disabled { opacity: 0.5; }
+
+/* ─── Comments ─── */
+.commentForm { margin-bottom: 16px; }
+.commentInput {
+  width: 100%; font-size: 13.5px; color: var(--ink); background: var(--paper-2);
+  border: 1px solid var(--line-2); border-radius: 10px; padding: 10px 12px; font-family: inherit; resize: vertical;
+}
+.commentInput:focus { outline: none; border-color: var(--sage); }
+.commentThumbs { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.commentThumb {
+  width: 60px; height: 60px; border-radius: 8px; background-size: cover; background-position: center; position: relative;
+}
+.commentThumb button {
+  position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--ink); color: #fff; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center;
+}
+.commentActions { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.photoBtn {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  font-size: 12.5px; font-weight: 600; color: var(--stone); padding: 7px 12px; border-radius: 9px; background: var(--sand);
+}
+.photoBtn:hover { color: var(--forest); background: var(--sand-2); }
+.commentPost { font-size: 13px; font-weight: 600; color: #fff; background: var(--terra); padding: 8px 18px; border-radius: 9px; }
+.commentPost:hover:not(:disabled) { background: var(--terra-dark); }
+.commentPost:disabled { opacity: 0.5; }
+.commentLogin {
+  width: 100%; text-align: center; font-size: 13px; font-weight: 600; color: var(--pine);
+  padding: 12px; border-radius: 10px; background: var(--paper-2); border: 1px dashed var(--line-2); margin-bottom: 14px;
+}
+.commentLogin:hover { background: rgba(94,122,85,0.06); }
+
+.commentList { display: flex; flex-direction: column; gap: 12px; }
+.comment { border-top: 1px solid var(--line); padding-top: 12px; }
+.comment:first-child { border-top: none; padding-top: 0; }
+.commentHead { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.commentAuthor { font-size: 13px; font-weight: 700; color: var(--forest); }
+.commentDate { font-size: 11.5px; color: var(--stone); }
+.commentDel { margin-left: auto; width: 20px; height: 20px; border-radius: 50%; color: var(--stone); font-size: 16px; line-height: 1; }
+.commentDel:hover { background: var(--sand-2); color: var(--terra); }
+.commentText { font-size: 13.5px; line-height: 1.55; color: var(--forest); white-space: pre-wrap; }
+.commentPhotos { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.commentPhoto {
+  width: 76px; height: 76px; border-radius: 9px; background-size: cover; background-position: center;
+  border: 1px solid var(--line); transition: transform 0.12s;
+}
+.commentPhoto:hover { transform: scale(1.04); }
+
+/* ─── Lightbox ─── */
+.lightbox {
+  position: fixed; inset: 0; z-index: 3000; background: rgba(10,12,8,0.9);
+  display: flex; align-items: center; justify-content: center; padding: 30px; cursor: zoom-out;
+}
+.lightboxImg { max-width: 100%; max-height: 100%; border-radius: 10px; }
+.lightboxClose {
+  position: fixed; top: 22px; right: 26px; width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,0.14); color: #fff; font-size: 24px; line-height: 1;
+}
+.lightboxClose:hover { background: rgba(255,255,255,0.28); }
+
+.commentDateRow { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.commentDateLbl { font-size: 12px; font-weight: 600; color: var(--forest); }
+.commentDate2 {
+  font-size: 12.5px; color: var(--ink); background: var(--paper-2);
+  border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 10px; font-family: inherit;
+}
+.commentDate2:focus { outline: none; border-color: var(--sage); }
+.waterSub { color: var(--stone); font-weight: 400; }
+.waterPotable { color: var(--sage); font-weight: 600; }

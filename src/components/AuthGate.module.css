@@ -1,0 +1,55 @@
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; color: var(--stone); font-size: 14px;
+}
+
+.gate {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; background: var(--paper); padding: 24px;
+}
+
+.card {
+  max-width: 380px; width: 100%; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.logo { color: var(--forest); margin-bottom: 16px; }
+
+.title {
+  font-family: 'Fraunces', serif; font-size: 32px; font-weight: 600;
+  color: var(--forest); margin-bottom: 10px; letter-spacing: -0.01em;
+}
+
+.subtitle {
+  font-size: 14px; color: var(--stone); line-height: 1.6;
+  margin-bottom: 28px; max-width: 320px;
+}
+
+.form { display: flex; gap: 8px; width: 100%; }
+
+.input {
+  flex: 1; padding: 13px 16px; border-radius: 11px;
+  border: 1px solid var(--line); background: var(--paper-2);
+  font-size: 15px; color: var(--forest); outline: none;
+  transition: border-color 0.15s;
+}
+.input:focus { border-color: var(--sage); background: var(--paper); }
+.input::placeholder { color: var(--stone-light); }
+
+.btn {
+  padding: 13px 24px; border-radius: 11px;
+  background: var(--forest); color: var(--paper);
+  font-size: 15px; font-weight: 500; transition: background 0.15s;
+}
+.btn:hover:not(:disabled) { background: #16221a; }
+.btn:disabled { opacity: 0.5; }
+
+.error {
+  font-size: 12px; color: var(--terra);
+  margin-top: 10px;
+}
+
+.hint {
+  font-size: 12px; color: var(--stone-light);
+  margin-top: 18px; line-height: 1.5;
+}

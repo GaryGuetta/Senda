@@ -1,0 +1,124 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String?  // null for legacy accounts created before passwords
+  createdAt    DateTime @default(now())
+
+  trails  Trail[]
+  reviews     Review[]
+  completions Completion[]
+
+  @@map("users")
+}
+
+model Trail {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  distance    Float    @default(0)
+  elevation   Int      @default(0)
+  geojson     Json
+  center      Json
+  createdAt   DateTime @default(now())
+
+  // Each trail belongs to one user
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Public traces appear in the shared bank (visible to everyone).
+  // Private traces are only visible to their owner.
+  isPublic Boolean @default(false)
+
+  // Creator's stated difficulty (1-10, mapped from Facile/Moyenne/Difficile/Très difficile)
+  difficulty Int?
+
+  // Photos as base64 data URLs (JSON array). Only loaded on the detail endpoint.
+  photos Json?
+
+  reviews     Review[]
+  completions Completion[]
+
+  featureVector Unsupported("vector(16)")?
+
+  @@index([userId])
+  @@index([isPublic])
+  @@map("trails")
+}
+
+// Per-user "I've done this hike" marker
+model Completion {
+  id        String   @id @default(cuid())
+  trailId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  trail Trail @relation(fields: [trailId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([trailId, userId])
+  @@index([userId])
+  @@map("completions")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  trailId   String
+  userId    String
+  // User's perceived surface breakdown (percentages, sum ~100)
+  pctRoute    Int @default(0)  // route / chemin roulant
+  pctSentier  Int @default(0)  // sentier naturel
+  pctRocheux  Int @default(0)  // terrain rocheux
+  pctMontagne Int @default(0)  // haute montagne (éboulis, neige)
+  // Overall perceived difficulty 1-10
+  difficulty Int @default(5)
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  trail Trail @relation(fields: [trailId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([trailId, userId])
+  @@index([userId])
+  @@map("reviews")
+}
+
+
+// Community-editable info overriding the external refuge API (last edit wins)
+model RefugeContribution {
+  id          String   @id @default(cuid())
+  refugeId    String   @unique
+  eau         String?
+  bois        String?
+  places      String?
+  altitude    Int?
+  description String?
+  updatedBy   String?
+  updatedAt   DateTime @updatedAt
+}
+
+
+// Generic comments (trip notes) on any target — trails or refuges — with optional photos
+model Comment {
+  id         String   @id @default(cuid())
+  targetType String   // "trail" | "refuge"
+  targetId   String
+  userId     String
+  username   String
+  text       String
+  visitDate  String?
+  photos     Json?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+}

@@ -1,0 +1,114 @@
+.page { display: flex; flex-direction: column; height: calc(117.6vh - 58px); }
+
+/* Top bar */
+.bar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--paper);
+  flex-shrink: 0;
+}
+@media (max-width: 640px) { .bar { padding: 10px 14px; gap: 10px; flex-wrap: wrap; } }
+.switch { display: flex; gap: 4px; background: var(--sand); padding: 3px; border-radius: 10px; flex-shrink: 0; }
+.tab {
+  padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  color: var(--stone); transition: all 0.13s;
+}
+.tab:hover { color: var(--forest); }
+.tabActive { background: var(--paper); color: var(--terra); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+
+.searchWrap { flex: 1; max-width: 420px; position: relative; display: flex; align-items: center; }
+.searchIcon { position: absolute; left: 12px; color: var(--stone); pointer-events: none; }
+.search {
+  width: 100%; padding: 9px 34px 9px 36px; border-radius: 10px;
+  border: 1px solid var(--line-2); background: var(--paper-2);
+  font-size: 13.5px; color: var(--ink); transition: border-color 0.14s, box-shadow 0.14s;
+}
+.search:focus { outline: none; border-color: var(--sage); box-shadow: 0 0 0 3px rgba(94,122,85,0.12); }
+.search::placeholder { color: var(--stone-light); }
+.searchClear {
+  position: absolute; right: 8px; width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--stone); background: var(--sand-2); transition: background 0.13s, color 0.13s;
+}
+.searchClear:hover { background: var(--line-2); color: var(--forest); }
+@media (max-width: 640px) { .searchWrap { order: 3; max-width: none; flex-basis: 100%; } }
+
+/* Split layout */
+.split { flex: 1; display: flex; min-height: 0; }
+.sidebar {
+  width: 360px; flex-shrink: 0; display: flex; flex-direction: column;
+  border-right: 1px solid var(--line); background: var(--paper); min-height: 0;
+}
+.mapArea { flex: 1; position: relative; min-width: 0; }
+
+@media (max-width: 820px) {
+  .split { flex-direction: column-reverse; }
+  .sidebar { width: 100%; flex: 1; border-right: none; border-top: 1px solid var(--line); }
+  .mapArea { height: 46vh; flex: none; }
+}
+
+/* List */
+.listHead {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 18px; font-size: 12.5px; font-weight: 600; color: var(--stone);
+  border-bottom: 1px solid var(--line); flex-shrink: 0;
+}
+.clearArea {
+  font-size: 12px; font-weight: 600; color: var(--terra);
+  padding: 3px 10px; border-radius: 12px; background: rgba(190,95,57,0.1);
+}
+.clearArea:hover { background: rgba(190,95,57,0.2); }
+.list { overflow-y: auto; flex: 1; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.emptyList { padding: 40px 24px; text-align: center; color: var(--stone); font-size: 13.5px; line-height: 1.6; }
+
+.item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 11px 12px; border-radius: 12px; background: transparent;
+  border: 1px solid transparent; transition: all 0.13s;
+}
+.item:hover, .itemHover { background: var(--paper-2); border-color: var(--line-2); }
+.itemHover { box-shadow: 0 2px 10px rgba(22,36,28,0.08); }
+.itemScore {
+  width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0; color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px;
+}
+.itemInfo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.itemName { font-size: 14px; font-weight: 600; color: var(--forest); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.itemMeta { font-size: 12px; color: var(--stone); }
+.itemDone { color: var(--sage); font-weight: 600; }
+.itemDiff { font-size: 11.5px; font-weight: 600; }
+.itemArrow { color: var(--stone-light); flex-shrink: 0; }
+.item:hover .itemArrow, .itemHover .itemArrow { color: var(--sage); }
+
+.empty {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: var(--stone); font-size: 14px; padding: 24px; text-align: center;
+}
+
+/* ─── Filter panel (top of sidebar) ─── */
+.filters {
+  padding: 14px 16px; border-bottom: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 13px; flex-shrink: 0;
+}
+.filterRow { display: flex; flex-wrap: wrap; gap: 6px; }
+.diffPill {
+  padding: 6px 11px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  color: var(--stone); background: var(--sand); border: 1px solid transparent;
+  transition: all 0.13s;
+}
+.diffPill:hover { color: var(--forest); border-color: var(--line-2); }
+.diffPillActive { background: var(--terra); color: #fff; border-color: var(--terra); }
+.diffPillActive:hover { background: var(--terra-dark); color: #fff; }
+.resetFilters {
+  align-self: flex-start; font-size: 12px; font-weight: 600; color: var(--terra);
+  padding: 5px 0;
+}
+.resetFilters:hover { color: var(--terra-dark); text-decoration: underline; }
+
+/* Non-blocking "no trails" note over the map */
+.mapNote {
+  position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+  z-index: 500; pointer-events: none;
+  background: var(--forest); color: var(--paper);
+  font-size: 12.5px; font-weight: 600; padding: 8px 16px; border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25); white-space: nowrap;
+}

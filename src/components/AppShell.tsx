@@ -1,0 +1,239 @@
+"use client";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useAuth } from "./AuthProvider";
+import styles from "./AppShell.module.css";
+import ThemeToggle from "./ThemeToggle";
+
+const NAV = [
+  { href: "/explorer", label: "Explorer" },
+  { href: "/carte", label: "Carte" },
+  { href: "/refuges", label: "Planifier" },
+  { href: "/mes-traces", label: "Mes traces", auth: true },
+];
+
+export default function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout, requireLogin, loginOpen, setLoginOpen, login } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  function go(href: string, needsAuth?: boolean) {
+    setMenuOpen(false);
+    if (needsAuth && !user) { requireLogin(); return; }
+    router.push(href);
+  }
+
+  return (
+    <div className={styles.shell}>
+      <header className={styles.nav}>
+        <div className={styles.navInner}>
+          <button className={styles.brand} onClick={() => router.push("/")}>
+            <svg className={styles.mark} viewBox="0 0 720 592" aria-hidden><g transform="translate(0.000000,592.000000) scale(0.100000,-0.100000)" fill="var(--logo-mtn)" stroke="none"><path d="M3628 5409 c-97 -98 -148 -156 -148 -170 0 -13 -24 -44 -60 -79 -38
+-36 -60 -66 -60 -80 0 -14 -28 -49 -80 -100 -51 -50 -80 -86 -80 -100 0 -14
+-29 -50 -80 -100 -51 -50 -80 -86 -80 -100 0 -14 -29 -50 -80 -100 -51 -50
+-80 -86 -80 -100 0 -14 -35 -56 -100 -120 -66 -65 -100 -106 -100 -120 0 -14
+-23 -44 -60 -80 -38 -37 -60 -66 -60 -80 0 -14 -22 -43 -60 -80 -37 -36 -60
+-66 -60 -80 0 -28 -52 -80 -80 -80 -12 0 -30 -10 -40 -22 l-18 -23 -120 123
+c-81 82 -127 122 -142 122 -12 0 -30 10 -41 23 l-19 22 -19 -22 c-11 -13 -29
+-23 -40 -23 -29 0 -161 -132 -161 -160 0 -14 -56 -76 -160 -180 -106 -105
+-160 -166 -160 -180 0 -14 -36 -57 -100 -120 -64 -64 -100 -106 -100 -120 0
+-14 -41 -62 -120 -140 -79 -78 -120 -126 -120 -140 0 -14 -36 -56 -100 -120
+-65 -64 -100 -106 -100 -120 0 -14 -35 -56 -100 -120 -65 -64 -100 -106 -100
+-120 0 -14 -35 -56 -100 -120 -67 -66 -100 -106 -100 -121 0 -13 -17 -37 -41
+-60 -50 -46 -53 -92 -7 -97 23 -3 58 27 257 227 150 150 231 238 231 251 0 13
+110 130 320 340 217 217 320 326 320 341 0 27 52 79 80 79 28 0 80 52 80 79 0
+29 332 361 361 361 13 0 57 -37 119 -100 73 -74 105 -100 124 -100 15 0 30 -8
+36 -20 8 -15 21 -20 56 -20 42 0 49 4 114 70 43 42 70 78 70 91 0 13 30 50 80
+99 51 50 80 86 80 100 0 14 35 56 100 120 65 64 100 106 100 120 0 14 35 56
+100 120 65 64 100 106 100 120 0 14 35 56 100 120 65 64 100 106 100 120 0 14
+35 56 100 120 65 64 100 106 100 120 0 14 35 56 100 120 65 64 100 106 100
+120 0 28 52 80 80 80 29 0 120 -92 120 -122 0 -14 15 -36 40 -58 26 -23 40
+-44 40 -60 0 -16 14 -37 40 -60 25 -22 40 -44 40 -59 0 -15 20 -43 60 -81 43
+-41 60 -65 60 -84 0 -15 8 -30 20 -36 12 -7 20 -21 20 -38 0 -19 12 -37 40
+-62 26 -23 40 -44 40 -60 0 -16 14 -37 40 -60 26 -23 40 -44 40 -60 0 -16 14
+-37 40 -60 26 -23 40 -44 40 -60 0 -16 14 -37 40 -60 26 -23 40 -44 40 -60 0
+-16 14 -37 40 -60 28 -25 40 -43 40 -62 0 -17 8 -31 20 -38 12 -6 20 -21 20
+-36 0 -19 17 -43 60 -84 40 -38 60 -66 60 -81 0 -15 15 -37 40 -59 28 -25 40
+-43 40 -62 0 -17 8 -31 20 -38 12 -6 20 -21 20 -35 0 -18 26 -51 91 -117 l91
+-92 18 22 c10 12 29 22 44 22 15 0 30 8 36 20 6 12 21 20 36 20 19 0 43 17 84
+60 35 37 66 60 79 60 29 0 161 -132 161 -160 0 -14 43 -63 120 -140 79 -78
+120 -126 120 -140 0 -14 36 -56 100 -120 65 -64 100 -106 100 -120 0 -14 35
+-56 100 -120 64 -64 100 -106 100 -120 0 -14 41 -62 120 -140 78 -77 120 -126
+120 -140 0 -14 42 -63 120 -140 78 -77 120 -126 120 -140 0 -14 42 -62 119
+-139 89 -88 120 -126 123 -147 3 -28 5 -29 61 -32 70 -4 74 10 17 59 -26 22
+-40 42 -40 58 0 15 -20 43 -60 81 -38 37 -60 66 -60 80 0 14 -22 43 -60 80
+-38 37 -60 66 -60 80 0 14 -22 43 -60 80 -38 37 -60 66 -60 80 0 14 -22 43
+-60 80 -38 36 -60 66 -60 80 0 14 -28 49 -80 100 -55 53 -80 86 -80 102 0 14
+-15 36 -40 58 -25 22 -40 44 -40 59 0 15 -20 43 -60 81 -38 37 -60 66 -60 80
+0 14 -22 43 -60 80 -38 37 -60 66 -60 80 0 14 -22 43 -60 80 -38 36 -60 66
+-60 80 0 14 -28 49 -80 100 -51 50 -80 86 -80 100 0 14 -29 50 -80 100 -51 50
+-80 86 -80 100 0 46 -52 80 -122 80 -61 0 -64 -2 -98 -40 -23 -26 -44 -40 -60
+-40 -16 0 -37 -14 -60 -40 -22 -25 -44 -40 -58 -40 -30 0 -82 51 -82 80 0 14
+-23 44 -60 80 -43 41 -60 65 -60 84 0 15 -8 30 -20 36 -13 7 -20 21 -20 40 0
+19 -7 33 -20 40 -12 7 -20 21 -20 38 0 19 -12 37 -40 62 -26 23 -40 44 -40 60
+0 16 -14 37 -40 60 -28 25 -40 43 -40 62 0 17 -8 31 -20 38 -12 7 -20 21 -20
+38 0 19 -12 37 -40 62 -26 23 -40 44 -40 60 0 16 -14 37 -40 60 -26 23 -40 44
+-40 60 0 16 -14 37 -40 60 -26 23 -40 44 -40 60 0 16 -14 37 -40 60 -28 25
+-40 43 -40 62 0 17 -8 31 -20 38 -12 6 -20 21 -20 36 0 19 -17 43 -60 84 -43
+41 -60 65 -60 84 0 15 -8 30 -20 36 -12 7 -20 21 -20 38 0 19 -12 37 -40 62
+-26 23 -40 44 -40 60 0 16 -14 37 -40 60 -24 21 -40 44 -40 58 0 32 -131 162
+-162 161 -16 0 -70 -48 -170 -150z"/>
+<path d="M3918 2820 c-13 -14 -30 -20 -61 -20 -30 0 -47 -6 -60 -20 -12 -14
+-29 -20 -62 -20 -34 0 -47 -5 -55 -20 -8 -16 -21 -20 -60 -20 -39 0 -52 -4
+-60 -20 -8 -16 -21 -20 -60 -20 -39 0 -52 -4 -60 -20 -7 -13 -21 -20 -40 -20
+-19 0 -33 -7 -40 -20 -8 -16 -21 -20 -60 -20 -39 0 -52 -4 -60 -20 -7 -13 -21
+-20 -40 -20 -19 0 -33 -7 -40 -20 -6 -12 -21 -20 -36 -20 -19 0 -43 -17 -83
+-59 -40 -41 -66 -60 -87 -63 -24 -2 -30 -8 -32 -33 -3 -19 -18 -43 -43 -66
+-47 -43 -57 -119 -19 -139 12 -6 20 -21 20 -36 0 -34 90 -124 124 -124 15 0
+30 -8 36 -20 7 -13 21 -20 40 -20 19 0 33 -7 40 -20 8 -16 21 -20 60 -20 39 0
+52 -4 60 -20 7 -13 21 -20 40 -20 19 0 33 -7 40 -20 8 -16 21 -20 60 -20 39 0
+52 -4 60 -20 9 -18 21 -20 100 -20 79 0 91 -2 100 -20 9 -17 21 -20 80 -20 59
+0 71 -3 80 -20 9 -17 21 -20 80 -20 59 0 71 -3 80 -20 8 -16 21 -20 60 -20 39
+0 52 -4 60 -20 8 -16 21 -20 60 -20 39 0 52 -4 60 -20 8 -16 21 -20 60 -20 39
+0 52 -4 60 -20 6 -12 21 -20 36 -20 34 0 84 -51 84 -85 0 -18 6 -29 20 -32 11
+-3 20 -13 20 -23 0 -10 -9 -20 -20 -23 -14 -3 -20 -14 -20 -32 0 -33 -50 -85
+-82 -85 -14 0 -36 -15 -58 -40 -31 -36 -40 -40 -82 -40 -37 0 -50 -4 -58 -20
+-7 -13 -21 -20 -40 -20 -19 0 -33 -7 -40 -20 -7 -13 -21 -20 -40 -20 -19 0
+-33 -7 -40 -20 -8 -16 -21 -20 -60 -20 -39 0 -52 -4 -60 -20 -8 -16 -21 -20
+-60 -20 -39 0 -52 -4 -60 -20 -8 -16 -21 -20 -60 -20 -39 0 -52 -4 -60 -20 -8
+-16 -21 -20 -60 -20 -39 0 -52 -4 -60 -20 -8 -16 -21 -20 -60 -20 -39 0 -52
+-4 -60 -20 -9 -17 -21 -20 -80 -20 -59 0 -71 -3 -80 -20 -8 -16 -21 -20 -60
+-20 -39 0 -52 -4 -60 -20 -9 -17 -21 -20 -80 -20 -59 0 -71 -3 -80 -20 -9 -17
+-21 -20 -80 -20 -59 0 -71 -3 -80 -20 -8 -16 -21 -20 -60 -20 -39 0 -52 -4
+-60 -20 -8 -16 -21 -20 -60 -20 -39 0 -52 -4 -60 -20 -9 -17 -21 -20 -80 -20
+-59 0 -71 -3 -80 -20 -9 -18 -21 -20 -100 -20 -79 0 -91 -2 -100 -20 -8 -16
+-21 -20 -60 -20 -39 0 -52 -4 -60 -20 -8 -16 -21 -20 -60 -20 -39 0 -52 -4
+-60 -20 -8 -16 -21 -20 -60 -20 -39 0 -52 -4 -60 -20 -9 -18 -21 -20 -100 -20
+-79 0 -91 -2 -100 -20 -9 -17 -21 -20 -80 -20 -58 0 -71 -3 -80 -19 -6 -12
+-23 -21 -43 -23 -29 -3 -32 -6 -32 -38 l0 -35 92 -3 c84 -2 93 -1 103 18 10
+19 20 20 140 20 119 0 130 2 140 20 10 18 21 20 140 20 119 0 130 2 140 20 10
+18 21 20 120 20 99 0 110 2 120 20 9 17 21 20 80 20 59 0 71 3 80 20 9 17 21
+20 80 20 59 0 71 3 80 20 9 17 21 20 80 20 59 0 71 3 80 20 9 18 21 20 100 20
+79 0 91 2 100 20 9 17 21 20 80 20 59 0 71 3 80 20 8 16 21 20 60 20 39 0 52
+4 60 20 8 16 21 20 60 20 39 0 52 4 60 20 8 16 21 20 60 20 39 0 52 4 60 20 9
+17 21 20 80 20 59 0 71 3 80 20 8 16 21 20 60 20 39 0 52 4 60 20 7 13 21 20
+40 20 19 0 33 7 40 20 7 13 21 20 40 20 19 0 33 7 40 20 8 16 21 20 60 20 39
+0 52 4 60 20 7 13 21 20 40 20 19 0 33 7 40 20 8 16 21 20 58 20 42 0 51 4 82
+40 21 24 44 40 58 40 15 0 57 35 132 110 l110 110 0 104 c0 94 -2 106 -19 116
+-12 6 -21 23 -23 43 -3 27 -7 32 -33 35 -19 3 -43 18 -66 43 -24 26 -44 39
+-62 39 -16 0 -30 8 -37 20 -7 13 -21 20 -40 20 -19 0 -33 7 -40 20 -7 13 -21
+20 -40 20 -19 0 -33 7 -40 20 -9 17 -21 20 -80 20 -59 0 -71 3 -80 20 -9 17
+-21 20 -80 20 -59 0 -71 3 -80 20 -9 17 -21 20 -80 20 -59 0 -71 3 -80 20 -8
+16 -21 20 -60 20 -39 0 -52 4 -60 20 -8 16 -21 20 -60 20 -39 0 -52 4 -60 20
+-9 17 -21 20 -80 20 -59 0 -71 3 -80 20 -8 16 -21 20 -60 20 -39 0 -52 4 -60
+20 -8 15 -21 20 -56 20 -41 0 -50 5 -94 50 -49 48 -50 50 -50 110 l0 61 70 69
+c45 46 77 70 92 70 14 0 37 16 58 40 25 28 43 40 62 40 17 0 31 8 38 20 7 13
+21 20 40 20 19 0 33 7 40 20 8 16 21 20 60 20 39 0 52 4 60 20 7 13 21 20 40
+20 19 0 33 7 40 20 7 13 21 20 38 20 15 0 35 9 45 20 12 14 29 20 60 20 30 0
+47 6 60 20 12 14 29 20 61 20 32 0 48 5 55 17 6 12 27 19 63 23 38 3 53 9 53
+20 0 26 -175 27 -197 0z"/></g></svg>
+            <span className={styles.brandName}>Senda</span>
+          </button>
+
+          <nav className={styles.links}>
+            {NAV.map(item => (
+              <button key={item.href}
+                className={`${styles.link} ${pathname === item.href || pathname.startsWith(item.href + "/") ? styles.linkActive : ""}`}
+                onClick={() => go(item.href, item.auth)}>
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className={styles.right}>
+            <ThemeToggle />
+            {user ? (
+              <div className={styles.userWrap}>
+                <button className={styles.userChip} onClick={() => setMenuOpen(o => !o)}>
+                  <span className={styles.avatar}>{user.username.charAt(0).toUpperCase()}</span>
+                  <span className={styles.userName}>{user.username}</span>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+                {menuOpen && (
+                  <div className={styles.dropdown}>
+                    <button onClick={() => go("/mes-traces", true)}>Mes traces</button>
+                    <button onClick={() => { setMenuOpen(false); logout(); router.push("/"); }} className={styles.logoutItem}>Se déconnecter</button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button className={styles.loginBtn} onClick={requireLogin}>Se connecter</button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className={styles.main}>{children}</main>
+
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} onLogin={login} />}
+    </div>
+  );
+}
+
+function LoginModal({ onClose, onLogin }: { onClose: () => void; onLogin: (mode: "login" | "signup", u: string, p: string) => Promise<{ ok: boolean; error?: string }> }) {
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    setBusy(true); setError(null);
+    const r = await onLogin(mode, username, password);
+    setBusy(false);
+    if (!r.ok) setError(r.error ?? "Erreur");
+  }
+
+  return (
+    <div className={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className={styles.modal}>
+        <button className={styles.modalClose} onClick={onClose} aria-label="Fermer">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round"/></svg>
+        </button>
+
+        <div className={styles.modalTabs}>
+          <button className={`${styles.modalTab} ${mode === "login" ? styles.modalTabActive : ""}`} onClick={() => { setMode("login"); setError(null); }}>Se connecter</button>
+          <button className={`${styles.modalTab} ${mode === "signup" ? styles.modalTabActive : ""}`} onClick={() => { setMode("signup"); setError(null); }}>Créer un compte</button>
+        </div>
+
+        <p className={styles.modalText}>
+          {mode === "login"
+            ? "Entrez votre pseudo et votre mot de passe pour retrouver vos traces et votre modèle."
+            : "Choisissez un pseudo et un mot de passe. Vos traces et votre modèle seront liés à ce compte."}
+        </p>
+
+        <div className={styles.modalForm}>
+          <input className={styles.modalInput} type="text" placeholder="Pseudo" maxLength={24}
+            value={username} autoFocus autoComplete="username"
+            onChange={e => { setUsername(e.target.value); setError(null); }}
+            onKeyDown={e => e.key === "Enter" && submit()} />
+          <div className={styles.pwWrap}>
+            <input className={styles.modalInput} type={showPw ? "text" : "password"} placeholder="Mot de passe (6 caractères min.)"
+              value={password} autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              onChange={e => { setPassword(e.target.value); setError(null); }}
+              onKeyDown={e => e.key === "Enter" && submit()} />
+            <button type="button" className={styles.pwToggle} onClick={() => setShowPw(v => !v)} aria-label={showPw ? "Masquer" : "Afficher"}>
+              {showPw
+                ? <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M17.9 17.9A9.8 9.8 0 0112 20C5 20 1 12 1 12a18 18 0 015-5.9m3.9-1.9A9.8 9.8 0 0112 4c7 0 11 8 11 8a18 18 0 01-2.2 3.2M1 1l22 22" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                : <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="3"/></svg>}
+            </button>
+          </div>
+          <button className={styles.modalBtn} onClick={submit} disabled={busy}>
+            {busy ? "…" : mode === "login" ? "Se connecter" : "Créer mon compte"}
+          </button>
+        </div>
+        {error && <div className={styles.modalError}>{error}</div>}
+
+        <div className={styles.modalSwitch}>
+          {mode === "login" ? (
+            <>Pas encore de compte ? <button onClick={() => { setMode("signup"); setError(null); }}>Créer un compte</button></>
+          ) : (
+            <>Déjà un compte ? <button onClick={() => { setMode("login"); setError(null); }}>Se connecter</button></>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
