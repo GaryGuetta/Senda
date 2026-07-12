@@ -21,27 +21,25 @@ function buildSeg(trail: any): number[] | null {
 
 function badge(score: number | null, hovered = false) {
   const color = difficultyColor(score ?? 5);
-  const size = hovered ? 40 : 32;
-  const ring = hovered ? "0 0 0 4px rgba(255,255,255,0.6), 0 4px 14px rgba(0,0,0,0.35)" : "0 2px 8px rgba(0,0,0,0.25)";
+  const size = hovered ? 42 : 34;
+  const ring = hovered ? "0 0 0 4px rgba(255,255,255,0.6), 0 4px 14px rgba(0,0,0,0.35)" : "0 2px 8px rgba(0,0,0,0.28)";
   return L.divIcon({
-    html: `<div style="background:${color};color:#fff;border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${hovered?15:13}px;font-weight:600;border:3px solid #fff;box-shadow:${ring};font-family:Inter,sans-serif;transition:all .15s;">${score ?? "?"}</div>`,
+    html: `<div style="background:${color};color:#fff;border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${hovered?18:15}px;font-weight:700;border:3px solid #fff;box-shadow:${ring};font-family:Inter,sans-serif;transition:all .15s;">${score ?? "?"}</div>`,
     className: "", iconAnchor: [size/2, size/2],
   });
 }
 
-// A "start of trail" pin (teardrop) with the difficulty color
+// A "start of trail" teardrop pin with the score shown clearly on the coloured head.
 function startPin(score: number | null, hovered = false) {
   const color = difficultyColor(score ?? 5);
-  const s = hovered ? 38 : 30;
-  const inner = hovered ? 18 : 14;
-  const off = hovered ? 10 : 8;
-  const ring = hovered ? "0 0 0 4px rgba(255,255,255,0.55), 0 4px 12px rgba(0,0,0,0.4)" : "0 3px 8px rgba(0,0,0,0.3)";
+  const s = hovered ? 44 : 36;
+  const ring = hovered ? "0 0 0 4px rgba(255,255,255,0.55), 0 5px 14px rgba(0,0,0,0.4)" : "0 3px 9px rgba(0,0,0,0.32)";
   return L.divIcon({
-    html: `<div style="position:relative;width:${s}px;height:${s+10}px;">
+    html: `<div style="position:relative;width:${s}px;height:${s + 12}px;">
       <div style="position:absolute;top:0;left:0;width:${s}px;height:${s}px;background:${color};border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:${ring};"></div>
-      <div style="position:absolute;top:${off}px;left:${off}px;width:${inner}px;height:${inner}px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${hovered?11:9}px;font-weight:700;color:${color};font-family:Inter,sans-serif;">${score ?? "?"}</div>
+      <div style="position:absolute;top:0;left:0;width:${s}px;height:${s}px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:${hovered ? 17 : 15}px;font-family:Inter,sans-serif;">${score ?? "?"}</div>
     </div>`,
-    className: "", iconSize: [s, s+10], iconAnchor: [s/2, s+10],
+    className: "", iconSize: [s, s + 12], iconAnchor: [s / 2, s + 12],
   });
 }
 
@@ -139,6 +137,9 @@ function startInBounds(t: any, b: L.LatLngBounds): boolean {
 
 const MERENS: [number, number] = [42.6473, 1.8387];
 
+type FlyBox = { south: number; north: number; west: number; east: number };
+type FlyTarget = { lat: number; lng: number; zoom?: number; bbox?: FlyBox | null };
+
 interface ExploreMapProps {
   trails: any[];
   variant?: "lines" | "markers";
@@ -146,19 +147,25 @@ interface ExploreMapProps {
   onHoverTrail?: (id: string | null) => void;
   onBoundsChange?: (b: L.LatLngBounds) => void;
   autoFit?: boolean;
-  flyTo?: { lat: number; lng: number; zoom?: number } | null;
+  flyTo?: FlyTarget | null;
 }
 
 // Moves the map when a target is set (e.g. after a city search).
 // Instant (no animation): animating while the marker list changes can make
 // Leaflet reference just-unmounted markers and crash. Snapping avoids that.
-function FlyTo({ target }: { target?: { lat: number; lng: number; zoom?: number } | null }) {
+function FlyTo({ target }: { target?: FlyTarget | null }) {
   const map = useMap();
   useEffect(() => {
     if (!target) return;
-    const lat = Number(target.lat), lng = Number(target.lng);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-    try { map.setView([lat, lng], target.zoom ?? 12, { animate: false }); } catch {}
+    try {
+      const bb = target.bbox;
+      if (bb && [bb.south, bb.north, bb.west, bb.east].every(Number.isFinite)) {
+        map.fitBounds([[bb.south, bb.west], [bb.north, bb.east]], { padding: [40, 40], maxZoom: 14, animate: false });
+        return;
+      }
+      const lat = Number(target.lat), lng = Number(target.lng);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) map.setView([lat, lng], target.zoom ?? 13, { animate: false });
+    } catch {}
   }, [target, map]);
   return null;
 }

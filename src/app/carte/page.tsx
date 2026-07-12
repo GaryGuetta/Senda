@@ -46,7 +46,7 @@ export default function CartePage() {
   const [areaFilter, setAreaFilter] = useState<LatLngBounds | null>(null);
   const [moved, setMoved] = useState(false);
   // City search
-  const [flyTo, setFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
+  const [flyTo, setFlyTo] = useState<{ lat: number; lng: number; zoom?: number; bbox?: { south: number; north: number; west: number; east: number } | null } | null>(null);
   const [cityBox, setCityBox] = useState<Box | null>(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoMsg, setGeoMsg] = useState<string | null>(null);
@@ -58,7 +58,7 @@ export default function CartePage() {
     try {
       const d = await fetch(`/api/geocode?q=${encodeURIComponent(term)}`).then(r => r.json());
       if (d?.found) {
-        setFlyTo({ lat: d.lat, lng: d.lng, zoom: 12 });
+        setFlyTo({ lat: d.lat, lng: d.lng, zoom: 13, bbox: d.bbox ?? null });
         const m = 0.11; // ~12 km margin so nearby trails show too
         const box: Box = d.bbox
           ? { south: d.bbox.south - m, north: d.bbox.north + m, west: d.bbox.west - m, east: d.bbox.east + m, name: term }
