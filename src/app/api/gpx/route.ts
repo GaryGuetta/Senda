@@ -967,7 +967,9 @@ export async function POST(req: NextRequest) {
     const nameInput = (formData.get("name") as string | null)?.trim()
     const name = reanalyzeId ? existingTrail.name : (nameInput && nameInput.length > 0 ? nameInput : parsedName)
     const description = reanalyzeId ? (existingTrail.description ?? null) : ((formData.get("description") as string | null)?.trim() || null)
-    const isPublic = reanalyzeId ? !!existingTrail.isPublic : (formData.get("isPublic") === "true")
+    const status = reanalyzeId ? (existingTrail.status ?? "faite") : ((formData.get("status") as string | null) === "projet" ? "projet" : "faite")
+    // A projet is never public — only completed traces can be shared.
+    const isPublic = status === "projet" ? false : (reanalyzeId ? !!existingTrail.isPublic : (formData.get("isPublic") === "true"))
     const difficultyRaw = formData.get("difficulty") as string | null
     const creatorDifficulty = reanalyzeId
       ? (existingTrail.difficulty ?? null)
@@ -1304,7 +1306,7 @@ export async function POST(req: NextRequest) {
       createdTrail = { id: reanalyzeId, name, distance: distKm, elevation: elevGain, center }
     } else {
       const trail = await prisma.$queryRaw<any[]>`
-        INSERT INTO trails (id, name, description, distance, elevation, geojson, center, "isPublic", difficulty, photos, "featureVector", "userId", "createdAt")
+        INSERT INTO trails (id, name, description, distance, elevation, geojson, center, "isPublic", status, difficulty, photos, "featureVector", "userId", "createdAt")
         VALUES (
           gen_random_uuid()::text,
           ${name},
@@ -1314,6 +1316,7 @@ export async function POST(req: NextRequest) {
           ${JSON.stringify(geojson)}::jsonb,
           ${JSON.stringify(center)}::jsonb,
           ${isPublic},
+          ${status},
           ${creatorDifficulty},
           ${JSON.stringify(photos)}::jsonb,
           ${vecStr}::vector,

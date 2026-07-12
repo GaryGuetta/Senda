@@ -49,3 +49,12 @@
 }
 .reanalyzeBtn:hover:not(:disabled) { border-color: var(--sage); background: rgba(94,122,85,0.06); }
 .reanalyzeBtn:disabled { opacity: 0.7; cursor: default; }
+
+.projectCard { display: flex; flex-direction: column; gap: 0; }
+.doneBtn {
+  margin-top: 8px; width: 100%; font-size: 13px; font-weight: 600; color: var(--pine);
+  padding: 10px; border-radius: 10px; background: var(--paper-2); border: 1px solid var(--line-2);
+  transition: all 0.14s;
+}
+.doneBtn:hover:not(:disabled) { border-color: var(--sage); background: rgba(94,122,85,0.06); }
+.doneBtn:disabled { opacity: 0.6; }

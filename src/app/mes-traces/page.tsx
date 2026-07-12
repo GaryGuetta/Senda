@@ -16,12 +16,13 @@ export default function MesTracesPage() {
   const [showImport, setShowImport] = useState(false);
   const [modelKey, setModelKey] = useState(0);
   const [reanalyzing, setReanalyzing] = useState<number | null>(null);
+  const faites = trails.filter((t: any) => t.status !== "projet");
 
   async function reanalyzeAll() {
-    if (!confirm(`Ré-analyser vos ${trails.length} trace(s) avec les derniers calculs ? Cela peut prendre un moment (les commentaires et notes sont conservés).`)) return;
+    if (!confirm(`Ré-analyser vos ${faites.length} trace(s) avec les derniers calculs ? Cela peut prendre un moment (les commentaires et notes sont conservés).`)) return;
     setReanalyzing(0);
     let done = 0;
-    for (const t of trails) {
+    for (const t of faites) {
       try {
         const fd = new FormData();
         fd.append("reanalyzeId", t.id);
@@ -61,7 +62,7 @@ export default function MesTracesPage() {
     </div>
   );
 
-  const publicCount = trails.filter(t => t.isPublic).length;
+  const publicCount = faites.filter(t => t.isPublic).length;
 
   return (
     <div className={styles.page}>
@@ -69,15 +70,15 @@ export default function MesTracesPage() {
         <div>
           <h1 className={styles.title}>Mes traces</h1>
           <p className={styles.subtitle}>
-            {trails.length} trace{trails.length > 1 ? "s" : ""}
+            {faites.length} trace{faites.length > 1 ? "s" : ""}
             {publicCount > 0 ? ` · ${publicCount} publiée${publicCount > 1 ? "s" : ""}` : ""}
           </p>
         </div>
         <div className={styles.headerActions}>
-          {trails.length > 0 && (
+          {faites.length > 0 && (
             <button className={styles.reanalyzeBtn} onClick={reanalyzeAll} disabled={reanalyzing !== null}>
               {reanalyzing !== null
-                ? `Ré-analyse ${reanalyzing}/${trails.length}…`
+                ? `Ré-analyse ${reanalyzing}/${faites.length}…`
                 : "↻ Ré-analyser tout"}
             </button>
           )}
@@ -88,7 +89,7 @@ export default function MesTracesPage() {
         </div>
       </div>
 
-      {trails.length > 0 && (
+      {faites.length > 0 && (
         <div className={styles.modelStrip}>
           <ModelInsight refreshKey={modelKey} />
         </div>
@@ -96,7 +97,7 @@ export default function MesTracesPage() {
 
       {loading ? (
         <div className={styles.state}>Chargement…</div>
-      ) : trails.length === 0 ? (
+      ) : faites.length === 0 ? (
         <div className={styles.empty}>
           <div className={styles.emptyIllus}>
             <svg viewBox="0 0 48 48" fill="none"><path d="M6 40L18 16l8 14 4-6 12 16z" fill="var(--sage)" opacity="0.2"/><path d="M6 40L18 16l8 14" stroke="var(--sage)" strokeWidth="1.5" fill="none"/></svg>
@@ -107,7 +108,7 @@ export default function MesTracesPage() {
         </div>
       ) : (
         <div className={`${styles.grid} stagger`}>
-          {trails.map(t => <TrailCard key={t.id} trail={t} />)}
+          {faites.map(t => <TrailCard key={t.id} trail={t} />)}
         </div>
       )}
 

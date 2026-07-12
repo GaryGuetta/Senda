@@ -7,7 +7,7 @@ import { getCurrentUserId } from "@/lib/session";
 const LIST_SELECT = {
   id: true, name: true, description: true, distance: true, elevation: true,
   geojson: true, center: true, createdAt: true, userId: true,
-  isPublic: true, difficulty: true, reviews: true,
+  isPublic: true, status: true, difficulty: true, reviews: true,
 } as const;
 
 // GET — only the current user's trails (private)

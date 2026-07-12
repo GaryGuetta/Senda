@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import type { LatLngBounds } from "leaflet";
+import { useAuth } from "@/components/AuthProvider";
 import { REFUGE_COLORS, REFUGE_LABELS } from "@/components/refugeStyles";
 import RefugeDetail from "@/components/RefugeDetail";
 import { parseGpx, planStages, densify, fetchElevations, routeBbox, haversine, naismith, totalAscent, buildRouteGeojson, detecterEauTrace, WaterFeature, GpxPoint, Stage } from "@/lib/gpxPlan";
@@ -34,6 +36,9 @@ export default function PlanifierPage() {
   // Entry + modes
   const [showEntry, setShowEntry] = useState(true);
   const [drawing, setDrawing] = useState(false);
+  const router = useRouter();
+  const { user, requireLogin } = useAuth();
+  const [savingProj, setSavingProj] = useState(false);
   const [drawPts, setDrawPts] = useState<[number, number][]>([]);
   const [routedPath, setRoutedPath] = useState<[number, number][]>([]);
   const [routingLive, setRoutingLive] = useState(false);
@@ -156,6 +161,28 @@ export default function PlanifierPage() {
     startFromGpxPoints(pts);
   }
 
+  async function saveAsProjet() {
+    if (!gpxPoints || gpxPoints.length < 2) return;
+    if (!user) { requireLogin(); return; }
+    const name = prompt("Nom du projet :", "Mon projet de rando");
+    if (!name || !name.trim()) return;
+    setSavingProj(true);
+    try {
+      const safe = name.replace(/[<>&]/g, "");
+      const trkpts = gpxPoints.map(p => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null ? `<ele>${p.ele}</ele>` : ""}</trkpt>`).join("");
+      const gpx = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="Senda"><trk><name>${safe}</name><trkseg>${trkpts}</trkseg></trk></gpx>`;
+      const fd = new FormData();
+      fd.append("file", new Blob([gpx], { type: "application/gpx+xml" }), "projet.gpx");
+      fd.append("name", name.trim());
+      fd.append("status", "projet");
+      const r = await fetch("/api/gpx", { method: "POST", body: fd });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.trail?.id) { router.push("/mes-projets"); }
+      else if (r.status === 401) requireLogin();
+      else alert(d.error || "Échec de l'enregistrement du projet.");
+    } finally { setSavingProj(false); }
+  }
+
   function calculate() {
     if (!gpxPoints) return;
     const { stages, near } = planStages(gpxPoints, refuges, { hoursPerDay, level, mode });
@@ -224,7 +251,8 @@ export default function PlanifierPage() {
           {loadingTrail ? (
             <div className={styles.state}><span className={styles.spin} /> Chargement de la trace…</div>
           ) : selected ? (
-            <RefugeDetail refuge={selected} onBack={() => setSelected(null)} />
+            <RefugeDetail refuge={selected} onBack={() => setSelected(null)}
+              moreHref={`/refuge/${encodeURIComponent(selected.id)}`} moreLabel="Voir la fiche complète" />
           ) : drawing ? (
             <div className={styles.planner}>
               <button className={styles.back} onClick={reset}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round"/></svg>Annuler</button>
@@ -280,6 +308,9 @@ export default function PlanifierPage() {
                   </div>
                 </div>
                 <button className={styles.calcBtn} onClick={calculate}>Calculer l'itinéraire</button>
+                <button className={styles.saveProjBtn} onClick={saveAsProjet} disabled={savingProj || !gpxPoints || gpxPoints.length < 2}>
+                  {savingProj ? "Enregistrement…" : "💾 Enregistrer comme projet"}
+                </button>
               </div>
               {stages && (
                 <div className={styles.stages}>

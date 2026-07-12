@@ -251,3 +251,11 @@
 
 .routingLive { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 12px; color: var(--terra); font-weight: 500; }
 .spinMini { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--line-2); border-top-color: var(--terra); animation: spin 0.7s linear infinite; }
+
+.saveProjBtn {
+  width: 100%; margin-top: 10px; font-size: 14px; font-weight: 600; color: var(--pine);
+  padding: 12px; border-radius: 11px; background: var(--paper-2); border: 1px solid var(--line-2);
+  transition: all 0.14s;
+}
+.saveProjBtn:hover:not(:disabled) { border-color: var(--sage); background: rgba(94,122,85,0.06); }
+.saveProjBtn:disabled { opacity: 0.55; }

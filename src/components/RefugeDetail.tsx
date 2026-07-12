@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import CommentsSection from "@/components/CommentsSection";
 import { REFUGE_COLORS, REFUGE_LABELS } from "./refugeStyles";
 import styles from "./RefugeDetail.module.css";
 
@@ -31,7 +30,7 @@ function fmtBool(v: any): string | null {
   return v.toString();
 }
 
-export default function RefugeDetail({ refuge, onBack }: { refuge: any; onBack: () => void }) {
+export default function RefugeDetail({ refuge, onBack, moreHref, moreLabel }: { refuge: any; onBack: () => void; moreHref?: string; moreLabel?: string }) {
   const [weather, setWeather] = useState<any>(null);
   const [wLoading, setWLoading] = useState(true);
   const [wError, setWError] = useState(false);
@@ -167,10 +166,10 @@ export default function RefugeDetail({ refuge, onBack }: { refuge: any; onBack: 
 
       {/* Key facts (merged with community contributions) */}
       <div className={styles.facts}>
-        {mAlt && <div className={styles.fact}><span className={styles.factVal}>{mAlt}</span><span className={styles.factLbl}>m altitude</span></div>}
-        {mPlaces && <div className={styles.fact}><span className={styles.factVal}>{mPlaces}</span><span className={styles.factLbl}>places</span></div>}
-        {eau && <div className={styles.fact}><span className={styles.factVal} style={{ fontSize: 16 }}>{eau === "Oui" ? "💧" : "—"}</span><span className={styles.factLbl}>eau</span></div>}
-        {bois && <div className={styles.fact}><span className={styles.factVal} style={{ fontSize: 16 }}>{bois === "Oui" ? "🪵" : "—"}</span><span className={styles.factLbl}>bois</span></div>}
+        <div className={styles.fact}><span className={styles.factVal}>{mAlt ?? "?"}</span><span className={styles.factLbl}>m altitude</span></div>
+        <div className={styles.fact}><span className={styles.factVal}>{mPlaces ?? "?"}</span><span className={styles.factLbl}>places</span></div>
+        <div className={styles.fact}><span className={styles.factVal} style={{ fontSize: 16 }}>{eau === "Oui" ? "💧" : eau === "Non" ? "✕" : "?"}</span><span className={styles.factLbl}>eau</span></div>
+        <div className={styles.fact}><span className={styles.factVal} style={{ fontSize: 16 }}>{bois === "Oui" ? "🪵" : bois === "Non" ? "✕" : "?"}</span><span className={styles.factLbl}>bois</span></div>
       </div>
 
       {/* Coordinates */}
@@ -285,15 +284,12 @@ export default function RefugeDetail({ refuge, onBack }: { refuge: any; onBack: 
         </div>
       )}
 
-      {/* Comments & photos (shared component) */}
-      <div className={styles.section}>
-        <CommentsSection targetType="refuge" targetId={refuge.id} placeholder="Votre passage, l'état du refuge, un conseil…" />
-      </div>
-
-      <a className={styles.apiBtn} href={refuge.lien || "https://refuges-pyrenees.vercel.app"} target="_blank" rel="noopener noreferrer">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        Plus d'infos ou modifier ce lieu
-      </a>
+      {(moreHref || refuge.lien) && (
+        <a className={styles.apiBtn} href={moreHref || refuge.lien} target={moreHref && moreHref.startsWith("/") ? undefined : "_blank"} rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          {moreLabel || "Plus d'infos ou modifier ce lieu"}
+        </a>
+      )}
 
       <div className={styles.warn}>
         ⚠️ Données collectées automatiquement, non vérifiées sur le terrain. À confirmer avant de partir.

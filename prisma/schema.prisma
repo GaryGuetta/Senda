@@ -39,6 +39,7 @@ model Trail {
   // Public traces appear in the shared bank (visible to everyone).
   // Private traces are only visible to their owner.
   isPublic Boolean @default(false)
+  status      String   @default("faite") // "projet" | "faite"
 
   // Creator's stated difficulty (1-10, mapped from Facile/Moyenne/Difficile/Très difficile)
   difficulty Int?
