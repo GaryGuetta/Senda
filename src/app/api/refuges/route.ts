@@ -8,6 +8,28 @@ function asCat(c: any): Cat {
   return c === "refuge" || c === "libre" || c === "cabane" || c === "ruine" ? c : "cabane";
 }
 
+// `places` may come back as a number, a string, or an object {ete, hiver}.
+// Normalise it to a short display string so it never lands in JSX as an object.
+function fmtPlaces(p: any): string | null {
+  if (p == null) return null;
+  if (typeof p === "number" || typeof p === "string") return String(p);
+  if (typeof p === "object") {
+    const ete = p.ete ?? p["été"] ?? p.summer;
+    const hiver = p.hiver ?? p.winter;
+    if (ete != null && hiver != null) return `${ete} / ${hiver}`;
+    const v = ete ?? hiver;
+    return v != null ? String(v) : null;
+  }
+  return null;
+}
+// Same defensive treatment for any free-text field that might arrive as an object.
+function asText(v: any): string | null {
+  if (v == null) return null;
+  if (typeof v === "string") return v;
+  if (typeof v === "number") return String(v);
+  return null;
+}
+
 export async function GET() {
   try {
     const ctrl = new AbortController();
@@ -32,13 +54,13 @@ export async function GET() {
         lon: r.lon,
         alt: r.altitude ?? null,
         region: r.region ?? "",
-        places: r.places ?? null,
-        eau: r.eau ?? null,
-        bois: r.bois ?? null,
+        places: fmtPlaces(r.places),
+        eau: asText(r.eau),
+        bois: asText(r.bois),
         typeNum: r.type_num ?? null,
-        typeLabel: r.type_libelle ?? null,
+        typeLabel: asText(r.type_libelle),
         cat: asCat(r.categorie),
-        desc: r.description ?? null,
+        desc: asText(r.description),
         lien: r.lien ?? null,
       }));
 
