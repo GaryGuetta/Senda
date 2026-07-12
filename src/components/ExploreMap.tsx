@@ -1,5 +1,6 @@
 "use client";
 import { MapContainer, TileLayer, Polyline, Marker, Popup, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -179,54 +180,36 @@ export default function ExploreMap({ trails, variant = "lines", hoveredId = null
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
     <MapContainer center={MERENS} zoom={12} style={{ width: "100%", height: "100%" }} zoomControl={true}>
       <TileLayer url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" attribution="© OpenTopoMap" maxZoom={17} />
-      {autoFit && !flyTo && <FitAll trails={trails} startsOnly={markersOnly} />}
+      {autoFit && !flyTo && <FitAll trails={trails} startsOnly />}
       <FlyTo target={flyTo} />
       {onBoundsChange && <BoundsWatcher onMove={(b) => onBoundsChange(b)} />}
 
-      {/* Full colored lines — only when not in markers mode */}
-      {!markersOnly && shown.map(t => <TrailLine key={t.id} trail={t} />)}
-
-      {shown.map(t => {
-        const score = trailDisplayScore(t);
-        // Marker position: START of trail in markers mode, else center
-        let pos: [number, number] | null = null;
-        const first = t?.geojson?.geometry?.coordinates?.[0];
-        if (markersOnly && first) pos = [first[1], first[0]];
-        else {
+      {/* Clustered markers only — no trail lines (much faster; nearby trails group
+          into a numbered bubble that splits apart as you zoom in). */}
+      <MarkerClusterGroup chunkedLoading maxClusterRadius={55} showCoverageOnHover={false} spiderfyOnMaxZoom>
+        {shown.map(t => {
+          const score = trailDisplayScore(t);
+          const first = t?.geojson?.geometry?.coordinates?.[0];
           const c = t.center as { lat: number; lng: number };
-          if (c) pos = [c.lat, c.lng];
-          else if (first) pos = [first[1], first[0]];
-        }
-        if (!pos) return null;
-
-        const isHovered = hoveredId === t.id;
-        return (
-          <Marker key={`m-${t.id}`} position={pos}
-            icon={markersOnly ? startPin(score, isHovered) : badge(score, isHovered)}
-            zIndexOffset={isHovered ? 1000 : 0}
-            eventHandlers={{
-              click: () => router.push(`/sentier/${t.id}`),
-              mouseover: () => onHoverTrail && onHoverTrail(t.id),
-              mouseout: () => onHoverTrail && onHoverTrail(null),
-            }}>
-            {markersOnly ? (
-              <Tooltip direction="top" offset={[0, -38]} opacity={1} className="trail-tip">
+          const pos: [number, number] | null = first ? [first[1], first[0]] : (c ? [c.lat, c.lng] : null);
+          if (!pos) return null;
+          const isHovered = hoveredId === t.id;
+          return (
+            <Marker key={`m-${t.id}`} position={pos}
+              icon={startPin(score, isHovered)}
+              zIndexOffset={isHovered ? 1000 : 0}
+              eventHandlers={{
+                click: () => router.push(`/sentier/${t.id}`),
+                mouseover: () => onHoverTrail && onHoverTrail(t.id),
+                mouseout: () => onHoverTrail && onHoverTrail(null),
+              }}>
+              <Tooltip direction="top" offset={[0, -40]} opacity={1} className="trail-tip">
                 <PreviewCard t={t} />
               </Tooltip>
-            ) : (
-              <Popup>
-                <div style={{ fontFamily: "Inter,sans-serif", minWidth: 160, textAlign: "center" }}>
-                  <div style={{ fontFamily: "Fraunces,serif", fontWeight: 600, fontSize: 14, marginBottom: 6, color: "var(--ink)" }}>{t.name}</div>
-                  {score != null && <div style={{ fontSize: 24, fontWeight: 600, color: difficultyColor(score), lineHeight: 1 }}>{score}<span style={{ fontSize: 13, opacity: 0.5 }}>/10</span></div>}
-                  <div style={{ fontSize: 12, color: difficultyColor(score ?? 5), fontWeight: 500, marginTop: 2 }}>{score != null ? scoreLabel(score) : ""}</div>
-                  <div style={{ fontSize: 11, color: "var(--stone)", marginTop: 6 }}>{t.distance} km · +{t.elevation} m</div>
-                  <div style={{ marginTop: 8, fontSize: 12, color: "#5E7A55", fontWeight: 500, cursor: "pointer" }} onClick={() => router.push(`/sentier/${t.id}`)}>Voir la fiche →</div>
-                </div>
-              </Popup>
-            )}
-          </Marker>
-        );
-      })}
+            </Marker>
+          );
+        })}
+      </MarkerClusterGroup>
     </MapContainer>
     </div>
   );
