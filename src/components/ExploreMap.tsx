@@ -149,11 +149,16 @@ interface ExploreMapProps {
   flyTo?: { lat: number; lng: number; zoom?: number } | null;
 }
 
-// Smoothly moves the map when a target is set (e.g. after a city search).
+// Moves the map when a target is set (e.g. after a city search).
+// Instant (no animation): animating while the marker list changes can make
+// Leaflet reference just-unmounted markers and crash. Snapping avoids that.
 function FlyTo({ target }: { target?: { lat: number; lng: number; zoom?: number } | null }) {
   const map = useMap();
   useEffect(() => {
-    if (target) map.flyTo([target.lat, target.lng], target.zoom ?? 12, { duration: 0.8 });
+    if (!target) return;
+    const lat = Number(target.lat), lng = Number(target.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    try { map.setView([lat, lng], target.zoom ?? 12, { animate: false }); } catch {}
   }, [target, map]);
   return null;
 }
