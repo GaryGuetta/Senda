@@ -2,7 +2,7 @@
 import { MapContainer, TileLayer, Polyline, Marker, Popup, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { difficultyColor, scoreLabel, trailDisplayScore } from "@/lib/difficulty";
 
@@ -173,8 +173,29 @@ function FlyTo({ target }: { target?: FlyTarget | null }) {
 
 export default function ExploreMap({ trails, variant = "lines", hoveredId = null, onHoverTrail, onBoundsChange, autoFit = true, flyTo = null }: ExploreMapProps) {
   const router = useRouter();
-  const markersOnly = variant === "markers";
   const shown = trails;
+
+  // Markers are memoised on the trail set only (NOT on hover/zoom) so the cluster
+  // layer isn't rebuilt on every map move — that rebuild is what broke zooming.
+  const markers = useMemo(() => shown.map(t => {
+    const score = trailDisplayScore(t);
+    const first = t?.geojson?.geometry?.coordinates?.[0];
+    const c = t.center as { lat: number; lng: number };
+    const pos: [number, number] | null = first ? [first[1], first[0]] : (c ? [c.lat, c.lng] : null);
+    if (!pos) return null;
+    return (
+      <Marker key={`m-${t.id}`} position={pos} icon={startPin(score, false)}
+        eventHandlers={{
+          click: () => router.push(`/sentier/${t.id}`),
+          mouseover: () => onHoverTrail && onHoverTrail(t.id),
+          mouseout: () => onHoverTrail && onHoverTrail(null),
+        }}>
+        <Tooltip direction="top" offset={[0, -40]} opacity={1} className="trail-tip">
+          <PreviewCard t={t} />
+        </Tooltip>
+      </Marker>
+    );
+  }), [shown, router, onHoverTrail]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
@@ -187,28 +208,7 @@ export default function ExploreMap({ trails, variant = "lines", hoveredId = null
       {/* Clustered markers only — no trail lines (much faster; nearby trails group
           into a numbered bubble that splits apart as you zoom in). */}
       <MarkerClusterGroup chunkedLoading maxClusterRadius={55} showCoverageOnHover={false} spiderfyOnMaxZoom>
-        {shown.map(t => {
-          const score = trailDisplayScore(t);
-          const first = t?.geojson?.geometry?.coordinates?.[0];
-          const c = t.center as { lat: number; lng: number };
-          const pos: [number, number] | null = first ? [first[1], first[0]] : (c ? [c.lat, c.lng] : null);
-          if (!pos) return null;
-          const isHovered = hoveredId === t.id;
-          return (
-            <Marker key={`m-${t.id}`} position={pos}
-              icon={startPin(score, isHovered)}
-              zIndexOffset={isHovered ? 1000 : 0}
-              eventHandlers={{
-                click: () => router.push(`/sentier/${t.id}`),
-                mouseover: () => onHoverTrail && onHoverTrail(t.id),
-                mouseout: () => onHoverTrail && onHoverTrail(null),
-              }}>
-              <Tooltip direction="top" offset={[0, -40]} opacity={1} className="trail-tip">
-                <PreviewCard t={t} />
-              </Tooltip>
-            </Marker>
-          );
-        })}
+        {markers}
       </MarkerClusterGroup>
     </MapContainer>
     </div>

@@ -118,7 +118,7 @@ export default function CartePage() {
   }
 
   const q = query.trim().toLowerCase();
-  const shown = trails.filter(t => {
+  const shown = useMemo(() => trails.filter(t => {
     if (q && !t.name.toLowerCase().includes(q)) return false;
     if (t.distance < distRange[0] || t.distance > distRange[1]) return false;
     if (t.elevation < dplusRange[0] || t.elevation > dplusRange[1]) return false;
@@ -126,7 +126,7 @@ export default function CartePage() {
     if (cityBox && !startInBox(t, cityBox)) return false;
     if (areaFilter && !startInBounds(t, areaFilter)) return false;
     return true;
-  });
+  }), [trails, q, distRange, dplusRange, diffFilter, cityBox, areaFilter]);
 
   return (
     <div className={styles.page}>
