@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 // Server-side weather proxy — better connectivity, caching, clean timeout/fallback.
 export async function GET(req: NextRequest) {
+  if (!rateLimit("weather:" + clientIp(req), 80, 60 * 1000)) return NextResponse.json({ error: "Trop de requêtes, patientez." }, { status: 429 });
   const sp = req.nextUrl.searchParams;
   const lat = parseFloat(sp.get("lat") || "");
   const lon = parseFloat(sp.get("lon") || "");

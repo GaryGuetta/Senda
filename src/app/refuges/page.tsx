@@ -35,6 +35,31 @@ export default function PlanifierPage() {
   const [showEntry, setShowEntry] = useState(true);
   const [drawing, setDrawing] = useState(false);
   const [drawPts, setDrawPts] = useState<[number, number][]>([]);
+  const [routedPath, setRoutedPath] = useState<[number, number][]>([]);
+  const [routingLive, setRoutingLive] = useState(false);
+
+  // Live pedestrian routing: snap the drawn waypoints onto real paths/trails.
+  useEffect(() => {
+    if (drawPts.length < 2) { setRoutedPath(drawPts); return; }
+    let cancelled = false;
+    setRoutingLive(true);
+    (async () => {
+      try {
+        const r = await fetch("/api/route", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ points: drawPts }),
+        });
+        const d = await r.json();
+        if (cancelled) return;
+        setRoutedPath(Array.isArray(d?.coords) && d.coords.length > 1 ? d.coords : drawPts);
+      } catch {
+        if (!cancelled) setRoutedPath(drawPts); // fallback: straight
+      } finally {
+        if (!cancelled) setRoutingLive(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [drawPts]);
   const [busy, setBusy] = useState<string | null>(null);
   const [loadingTrail, setLoadingTrail] = useState(false);
 
@@ -122,10 +147,12 @@ export default function PlanifierPage() {
   async function finishDraw() {
     if (drawPts.length < 2) { alert("Cliquez au moins 2 points sur la carte."); return; }
     setBusy("Calcul des altitudes…");
-    const dense = densify(drawPts, 250);
+    // Use the routed path (following trails) when available, else straight waypoints.
+    const base = routedPath.length >= 2 ? routedPath : drawPts;
+    const dense = densify(base, 250);
     const eles = await fetchElevations(dense);
     const pts: GpxPoint[] = dense.map((p, i) => ({ lat: p[0], lon: p[1], ele: eles[i] ?? null }));
-    setBusy(null); setDrawPts([]);
+    setBusy(null); setDrawPts([]); setRoutedPath([]);
     startFromGpxPoints(pts);
   }
 
@@ -137,7 +164,7 @@ export default function PlanifierPage() {
   }
 
   function reset() {
-    setPlanning(false); setDrawing(false); setDrawPts([]); setRoute(null);
+    setPlanning(false); setDrawing(false); setDrawPts([]); setRoutedPath([]); setRoute(null);
     setGpxPoints(null); setStages(null); setNearRefuges(null); setWater([]);
     setShowEntry(true);
   }
@@ -202,8 +229,11 @@ export default function PlanifierPage() {
             <div className={styles.planner}>
               <button className={styles.back} onClick={reset}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round"/></svg>Annuler</button>
               <h2 className={styles.title}>Tracer l'itinéraire</h2>
-              <p className={styles.subtitle}>Cliquez sur la carte pour poser les points de votre parcours. L'altitude sera récupérée automatiquement.</p>
-              <div className={styles.drawInfo}>{drawPts.length} point{drawPts.length > 1 ? "s" : ""} placé{drawPts.length > 1 ? "s" : ""}</div>
+              <p className={styles.subtitle}>Cliquez sur la carte pour poser les points de votre parcours. Le tracé suit automatiquement les chemins et sentiers.</p>
+              <div className={styles.drawInfo}>
+                {drawPts.length} point{drawPts.length > 1 ? "s" : ""} placé{drawPts.length > 1 ? "s" : ""}
+                {routingLive && <span className={styles.routingLive}><span className={styles.spinMini} /> calcul du chemin…</span>}
+              </div>
               <div className={styles.drawBtns}>
                 <button className={styles.drawUndo} onClick={() => setDrawPts(p => p.slice(0, -1))} disabled={!drawPts.length}>Annuler le dernier</button>
                 <button className={styles.drawClear} onClick={() => setDrawPts([])} disabled={!drawPts.length}>Tout effacer</button>
@@ -338,7 +368,7 @@ export default function PlanifierPage() {
             onBoundsChange={(b) => { setLiveBounds(b); setMoved(true); }}
             autoFit={!areaFilter && !selected && !route && !drawing}
             route={route} planStops={planStops} daySegments={daySegments}
-            drawing={drawing} drawPts={drawPts} onMapClick={(lat, lon) => setDrawPts(p => [...p, [lat, lon]])}
+            drawing={drawing} drawPts={drawPts} drawRouted={routedPath} onMapClick={(lat, lon) => setDrawPts(p => [...p, [lat, lon]])}
             waterPoints={water.filter(w => w.forme === "point").map(w => ({ lat: w.lat, lon: w.lon, type: w.type, potable: w.potable, nom: w.nom }))}
             waterZones={water.filter(w => w.forme === "zone").map(w => ({ ligne: w.ligne || [], type: w.type, nom: w.nom }))}
             hover={hover ? [hover.lat, hover.lng] : null}

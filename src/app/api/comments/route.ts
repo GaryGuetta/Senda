@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/session";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 // GET ?type=trail|refuge&id=<targetId> — list comments for a target
 export async function GET(req: NextRequest) {
@@ -19,6 +20,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
+  if (!rateLimit(`comment:${userId}`, 15, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: "Trop de commentaires publiés. Patientez un peu." }, { status: 429 });
+  }
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
 
   const b = await req.json();
@@ -26,7 +30,9 @@ export async function POST(req: NextRequest) {
   const targetId = (b.targetId ?? "").toString();
   const text = (b.text ?? "").toString().trim().slice(0, 2000);
   const visitDate = b.visitDate ? String(b.visitDate).slice(0, 10) : null;
-  const photos = Array.isArray(b.photos) ? b.photos.slice(0, 4) : [];
+  const photos = (Array.isArray(b.photos) ? b.photos : [])
+    .filter((p: any) => typeof p === "string" && p.length < 3_000_000) // reject oversized images (~3MB base64)
+    .slice(0, 4);
   if (!targetType || !targetId) return NextResponse.json({ error: "cible requise" }, { status: 400 });
   if (!text && photos.length === 0) return NextResponse.json({ error: "Commentaire ou photo requis." }, { status: 400 });
 

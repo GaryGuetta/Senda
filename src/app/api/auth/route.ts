@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { COOKIE_NAME } from "@/lib/session";
+import { COOKIE_NAME, makeSessionToken, readSessionToken } from "@/lib/session";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 // GET — return the current logged-in user
 export async function GET(req: NextRequest) {
-  const userId = req.cookies.get(COOKIE_NAME)?.value;
+  const userId = readSessionToken(req.cookies.get(COOKIE_NAME)?.value);
   if (!userId) return NextResponse.json({ user: null });
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
 }
 
 function setSession(res: NextResponse, userId: string) {
-  res.cookies.set(COOKIE_NAME, userId, {
+  res.cookies.set(COOKIE_NAME, makeSessionToken(userId), {
     httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 60 * 24 * 365, path: "/",
   });
@@ -23,6 +24,10 @@ function setSession(res: NextResponse, userId: string) {
 
 // POST — login or create an account (with password)
 export async function POST(req: NextRequest) {
+  // Anti brute-force: max 12 login/signup attempts per IP per 5 minutes.
+  if (!rateLimit(`auth:${clientIp(req)}`, 12, 5 * 60 * 1000)) {
+    return NextResponse.json({ error: "Trop de tentatives. Réessayez dans quelques minutes." }, { status: 429 });
+  }
   const body = await req.json();
   const mode: "login" | "signup" = body.mode === "signup" ? "signup" : "login";
   const clean = (body.username ?? "").trim();

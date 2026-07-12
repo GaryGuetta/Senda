@@ -61,7 +61,8 @@ interface Props {
   planStops?: { lat: number; lon: number; day: number; name: string; bivouac?: boolean }[]; // sleep stages
   daySegments?: { pts: [number, number][]; color: string }[]; // route coloured per day
   drawing?: boolean;                      // draw mode active
-  drawPts?: [number, number][];           // in-progress drawn points
+  drawPts?: [number, number][];           // in-progress drawn points (waypoints)
+  drawRouted?: [number, number][];        // path snapped to real trails
   onMapClick?: (lat: number, lon: number) => void;
   waterPoints?: { lat: number; lon: number; type: string; potable?: boolean; nom?: string | null }[];
   waterZones?: { ligne: [number, number][]; type: string; nom?: string | null }[];
@@ -92,7 +93,7 @@ function waterIcon(potable?: boolean) {
 
 const PYRENEES: [number, number] = [42.72, 0.55];
 
-export default function RefugesMap({ refuges, selectedId = null, hoveredId = null, onSelect, onHover, onBoundsChange, autoFit = true, route = null, planStops = [], daySegments = [], drawing = false, drawPts = [], onMapClick, waterPoints = [], waterZones = [], hover = null }: Props) {
+export default function RefugesMap({ refuges, selectedId = null, hoveredId = null, onSelect, onHover, onBoundsChange, autoFit = true, route = null, planStops = [], daySegments = [], drawing = false, drawPts = [], drawRouted = [], onMapClick, waterPoints = [], waterZones = [], hover = null }: Props) {
   return (
     <MapContainer center={PYRENEES} zoom={8} style={{ width: "100%", height: "100%" }} zoomControl={true}>
       <TileLayer url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" attribution="© OpenTopoMap" maxZoom={17} />
@@ -105,7 +106,13 @@ export default function RefugesMap({ refuges, selectedId = null, hoveredId = nul
       {/* In-progress drawn route */}
       {drawing && drawPts.length > 0 && (
         <>
-          <Polyline positions={drawPts} pathOptions={{ color: "#ff5d73", weight: 3.5, opacity: 0.95, dashArray: "7 7" }} />
+          {/* Routed path following real trails (solid). Falls back to straight waypoints. */}
+          {drawRouted && drawRouted.length > 1 ? (
+            <Polyline positions={drawRouted} pathOptions={{ color: "#ff5d73", weight: 4, opacity: 0.95 }} />
+          ) : (
+            drawPts.length > 1 && <Polyline positions={drawPts} pathOptions={{ color: "#ff5d73", weight: 3, opacity: 0.6, dashArray: "7 7" }} />
+          )}
+          {/* Waypoints the user clicked */}
           {drawPts.map((p, i) => (
             <CircleMarker key={`dp-${i}`} center={p} radius={i === 0 || i === drawPts.length - 1 ? 6 : 4}
               pathOptions={{ color: "#fff", weight: 2, fillColor: "#ff5d73", fillOpacity: 1 }} />

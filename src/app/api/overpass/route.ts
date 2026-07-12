@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 // Server-side Overpass proxy — better connectivity + mirror fallback than browser calls.
 const MIRRORS = [
@@ -8,6 +9,7 @@ const MIRRORS = [
 ];
 
 export async function POST(req: NextRequest) {
+  if (!rateLimit("overpass:" + clientIp(req), 80, 60 * 1000)) return NextResponse.json({ error: "Trop de requêtes, patientez." }, { status: 429 });
   let query = "";
   try { query = (await req.json()).query || ""; } catch { /* ignore */ }
   if (!query) return NextResponse.json({ error: "query requise" }, { status: 400 });

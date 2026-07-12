@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/session";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 // GET ?id=<refugeId> — merged info override + comments for a refuge
 export async function GET(req: NextRequest) {
@@ -14,6 +15,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: "Connexion requise." }, { status: 401 });
+  if (!rateLimit(`contrib:${userId}`, 30, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: "Trop de modifications. Patientez un peu." }, { status: 429 });
+  }
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
 
   const b = await req.json();

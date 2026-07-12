@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 // Geocode a place name (city, village…) via OSM Nominatim, server-side.
 export async function GET(req: NextRequest) {
+  if (!rateLimit("geocode:" + clientIp(req), 80, 60 * 1000)) return NextResponse.json({ error: "Trop de requêtes, patientez." }, { status: 429 });
   const q = req.nextUrl.searchParams.get("q")?.trim();
   if (!q || q.length < 2) return NextResponse.json({ error: "requête trop courte" }, { status: 400 });
 
