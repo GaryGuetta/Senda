@@ -50,3 +50,15 @@
 @media (max-width: 660px) { .grid { grid-template-columns: 1fr; } }
 
 .state { padding: 80px 24px; text-align: center; color: var(--stone); font-size: 15px; }
+
+.ranges {
+  display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap;
+  margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);
+}
+.ranges > div { min-width: 200px; flex: 1; max-width: 320px; }
+.resetRanges {
+  font-size: 12.5px; font-weight: 600; color: var(--terra);
+  padding: 8px 0; white-space: nowrap;
+}
+.resetRanges:hover { text-decoration: underline; }
+@media (max-width: 560px) { .ranges { flex-direction: column; gap: 16px; } .ranges > div { max-width: none; } }

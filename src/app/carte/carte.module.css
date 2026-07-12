@@ -112,3 +112,14 @@
   font-size: 12.5px; font-weight: 600; padding: 8px 16px; border-radius: 20px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.25); white-space: nowrap;
 }
+
+.searchSpin {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--line-2); border-top-color: var(--pine);
+  animation: spin 0.7s linear infinite; flex-shrink: 0; margin-right: 4px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.cityTag { color: var(--pine); font-weight: 600; margin-left: 6px; }
+.geoMsg {
+  font-size: 12.5px; color: var(--terra); padding: 6px 2px 0; font-weight: 500;
+}

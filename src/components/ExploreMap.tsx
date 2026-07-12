@@ -146,9 +146,19 @@ interface ExploreMapProps {
   onHoverTrail?: (id: string | null) => void;
   onBoundsChange?: (b: L.LatLngBounds) => void;
   autoFit?: boolean;
+  flyTo?: { lat: number; lng: number; zoom?: number } | null;
 }
 
-export default function ExploreMap({ trails, variant = "lines", hoveredId = null, onHoverTrail, onBoundsChange, autoFit = true }: ExploreMapProps) {
+// Smoothly moves the map when a target is set (e.g. after a city search).
+function FlyTo({ target }: { target?: { lat: number; lng: number; zoom?: number } | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (target) map.flyTo([target.lat, target.lng], target.zoom ?? 12, { duration: 0.8 });
+  }, [target, map]);
+  return null;
+}
+
+export default function ExploreMap({ trails, variant = "lines", hoveredId = null, onHoverTrail, onBoundsChange, autoFit = true, flyTo = null }: ExploreMapProps) {
   const router = useRouter();
   const markersOnly = variant === "markers";
   const shown = trails;
@@ -157,7 +167,8 @@ export default function ExploreMap({ trails, variant = "lines", hoveredId = null
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
     <MapContainer center={MERENS} zoom={12} style={{ width: "100%", height: "100%" }} zoomControl={true}>
       <TileLayer url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" attribution="© OpenTopoMap" maxZoom={17} />
-      {autoFit && <FitAll trails={trails} startsOnly={markersOnly} />}
+      {autoFit && !flyTo && <FitAll trails={trails} startsOnly={markersOnly} />}
+      <FlyTo target={flyTo} />
       {onBoundsChange && <BoundsWatcher onMove={(b) => onBoundsChange(b)} />}
 
       {/* Full colored lines — only when not in markers mode */}

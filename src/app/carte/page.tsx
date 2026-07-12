@@ -20,6 +20,16 @@ function startInBounds(t: any, b: LatLngBounds): boolean {
   return b.contains([lat, lng]);
 }
 
+type Box = { south: number; north: number; west: number; east: number; name?: string };
+function startInBox(t: any, box: Box): boolean {
+  const first = t?.geojson?.geometry?.coordinates?.[0];
+  const c = t.center as { lat: number; lng: number };
+  const lat = first ? first[1] : c?.lat;
+  const lng = first ? first[0] : c?.lng;
+  if (lat == null || lng == null) return false;
+  return lat >= box.south && lat <= box.north && lng >= box.west && lng <= box.east;
+}
+
 export default function CartePage() {
   const router = useRouter();
   const { user, requireLogin } = useAuth();
@@ -35,6 +45,34 @@ export default function CartePage() {
   const [liveBounds, setLiveBounds] = useState<LatLngBounds | null>(null);
   const [areaFilter, setAreaFilter] = useState<LatLngBounds | null>(null);
   const [moved, setMoved] = useState(false);
+  // City search
+  const [flyTo, setFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
+  const [cityBox, setCityBox] = useState<Box | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoMsg, setGeoMsg] = useState<string | null>(null);
+
+  async function goToPlace() {
+    const term = query.trim();
+    if (term.length < 2) return;
+    setGeoLoading(true); setGeoMsg(null);
+    try {
+      const d = await fetch(`/api/geocode?q=${encodeURIComponent(term)}`).then(r => r.json());
+      if (d?.found) {
+        setFlyTo({ lat: d.lat, lng: d.lng, zoom: 12 });
+        const m = 0.11; // ~12 km margin so nearby trails show too
+        const box: Box = d.bbox
+          ? { south: d.bbox.south - m, north: d.bbox.north + m, west: d.bbox.west - m, east: d.bbox.east + m, name: term }
+          : { south: d.lat - m, north: d.lat + m, west: d.lon - m, east: d.lon + m, name: term };
+        setCityBox(box);
+        setAreaFilter(null); setMoved(false);
+        setQuery(""); // switch from name-filter to area view
+      } else {
+        setGeoMsg(`« ${term} » introuvable`);
+      }
+    } catch {
+      setGeoMsg("Recherche indisponible");
+    } finally { setGeoLoading(false); }
+  }
 
   useEffect(() => {
     setLoading(true); setAreaFilter(null); setMoved(false);
@@ -85,6 +123,7 @@ export default function CartePage() {
     if (t.distance < distRange[0] || t.distance > distRange[1]) return false;
     if (t.elevation < dplusRange[0] || t.elevation > dplusRange[1]) return false;
     if (diffFilter && diffBucket(trailDisplayScore(t)) !== diffFilter) return false;
+    if (cityBox && !startInBox(t, cityBox)) return false;
     if (areaFilter && !startInBounds(t, areaFilter)) return false;
     return true;
   });
@@ -96,11 +135,12 @@ export default function CartePage() {
           <button className={`${styles.tab} ${view === "public" ? styles.tabActive : ""}`} onClick={() => switchTo("public")}>Banque publique</button>
           <button className={`${styles.tab} ${view === "mine" ? styles.tabActive : ""}`} onClick={() => switchTo("mine")}>Mes traces</button>
         </div>
-        <div className={styles.searchWrap}>
+        <form className={styles.searchWrap} onSubmit={e => { e.preventDefault(); goToPlace(); }}>
           <svg className={styles.searchIcon} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" strokeLinecap="round"/></svg>
-          <input className={styles.search} value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher un sentier par nom…" />
-          {query && <button className={styles.searchClear} onClick={() => setQuery("")} aria-label="Effacer"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round"/></svg></button>}
-        </div>
+          <input className={styles.search} value={query} onChange={e => { setQuery(e.target.value); setGeoMsg(null); }} placeholder="Sentier par nom, ou ville (Entrée)…" />
+          {geoLoading && <span className={styles.searchSpin} />}
+          {query && !geoLoading && <button type="button" className={styles.searchClear} onClick={() => setQuery("")} aria-label="Effacer"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round"/></svg></button>}
+        </form>
       </div>
 
       <div className={styles.split}>
@@ -122,8 +162,10 @@ export default function CartePage() {
           </div>
           <div className={styles.listHead}>
             {loading ? "Chargement…" : `${shown.length} sentier${shown.length > 1 ? "s" : ""}`}
-            {areaFilter && <button className={styles.clearArea} onClick={() => { setAreaFilter(null); setMoved(false); }}>voir tout</button>}
+            {cityBox?.name && <span className={styles.cityTag}>· autour de {cityBox.name}</span>}
+            {(areaFilter || cityBox) && <button className={styles.clearArea} onClick={() => { setAreaFilter(null); setCityBox(null); setFlyTo(null); setMoved(false); }}>voir tout</button>}
           </div>
+          {geoMsg && <div className={styles.geoMsg}>{geoMsg}</div>}
           {!loading && shown.length === 0 && (
             <div className={styles.emptyList}>
               {q ? `Aucun sentier ne correspond à « ${query} ».`
@@ -163,7 +205,8 @@ export default function CartePage() {
             hoveredId={hoveredId}
             onHoverTrail={setHoveredId}
             onBoundsChange={(b) => { setLiveBounds(b); setMoved(true); }}
-            autoFit={!areaFilter}
+            autoFit={!areaFilter && !cityBox}
+            flyTo={flyTo}
           />
           {!loading && shown.length === 0 && (
             <div className={styles.mapNote}>Aucun sentier ici {(areaFilter || filtersActive || q) ? "avec ces critères" : ""}</div>

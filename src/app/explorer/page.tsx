@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import TrailCard from "@/components/TrailCard";
+import DualRange from "@/components/DualRange";
 import { Trail } from "@/types";
 import { trailDisplayScore } from "@/lib/difficulty";
 import styles from "./explorer.module.css";
@@ -14,12 +15,31 @@ export default function ExplorerPage() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
   const [diff, setDiff] = useState<DiffFilter>("all");
+  const [distRange, setDistRange] = useState<[number, number]>([0, 100]);
+  const [dplusRange, setDplusRange] = useState<[number, number]>([0, 3000]);
 
   useEffect(() => {
     fetch("/api/trails/public").then(r => r.json()).then(d => {
       setTrails(Array.isArray(d) ? d : []); setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
+
+  // Slider bounds from the loaded set
+  const bounds = useMemo(() => {
+    let maxDist = 10, maxDplus = 500;
+    for (const t of trails) {
+      if (t.distance > maxDist) maxDist = t.distance;
+      if (t.elevation > maxDplus) maxDplus = t.elevation;
+    }
+    return { maxDist: Math.ceil(maxDist / 5) * 5, maxDplus: Math.ceil(maxDplus / 100) * 100 };
+  }, [trails]);
+
+  useEffect(() => {
+    setDistRange([0, bounds.maxDist]);
+    setDplusRange([0, bounds.maxDplus]);
+  }, [bounds.maxDist, bounds.maxDplus]);
+
+  const rangesActive = distRange[0] > 0 || distRange[1] < bounds.maxDist || dplusRange[0] > 0 || dplusRange[1] < bounds.maxDplus;
 
   const filtered = useMemo(() => {
     let list = [...trails];
@@ -35,6 +55,8 @@ export default function ExplorerPage() {
         return s > 6;
       });
     }
+    list = list.filter(t => t.distance >= distRange[0] && t.distance <= distRange[1]);
+    list = list.filter(t => t.elevation >= dplusRange[0] && t.elevation <= dplusRange[1]);
     list.sort((a, b) => {
       const sa = trailDisplayScore(a) ?? 5, sb = trailDisplayScore(b) ?? 5;
       switch (sort) {
@@ -46,7 +68,7 @@ export default function ExplorerPage() {
       }
     });
     return list;
-  }, [trails, query, sort, diff]);
+  }, [trails, query, sort, diff, distRange, dplusRange]);
 
   return (
     <div className={styles.page}>
@@ -76,6 +98,17 @@ export default function ExplorerPage() {
             <option value="long">Plus longs</option>
             <option value="short">Plus courts</option>
           </select>
+        </div>
+        <div className={styles.ranges}>
+          <DualRange label="Distance" unit="km" min={0} max={bounds.maxDist} step={1}
+            low={distRange[0]} high={distRange[1]} onChange={(l, h) => setDistRange([l, h])} />
+          <DualRange label="Dénivelé +" unit="m" min={0} max={bounds.maxDplus} step={50}
+            low={dplusRange[0]} high={dplusRange[1]} onChange={(l, h) => setDplusRange([l, h])} />
+          {rangesActive && (
+            <button className={styles.resetRanges} onClick={() => { setDistRange([0, bounds.maxDist]); setDplusRange([0, bounds.maxDplus]); }}>
+              Réinitialiser distance & D+
+            </button>
+          )}
         </div>
       </div>
 
