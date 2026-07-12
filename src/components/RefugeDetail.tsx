@@ -91,10 +91,15 @@ export default function RefugeDetail({ refuge, onBack, moreHref, moreLabel }: { 
       return { type: "Point d'eau", potable: false };
     };
     (async () => {
-      const mirrors = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
+      // Go through our own server proxy (avoids browser CORS + mirror fallback).
       let data: any = null;
-      for (const m of mirrors) { try { const rep = await fetchTimeout(m, { method: "POST", body: "data=" + encodeURIComponent(q) }, 9000); if (rep.ok) { data = await rep.json(); break; } } catch {} }
-      if (!data) { setWater([]); setWaterLoading(false); return; }
+      try {
+        const rep = await fetchTimeout("/api/overpass", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }),
+        }, 12000);
+        if (rep.ok) data = await rep.json();
+      } catch {}
+      if (!data || data.error) { setWater([]); setWaterLoading(false); return; }
       const seen = new Set<string>();
       const pts: any[] = [];
       for (const e of (data.elements || [])) {
