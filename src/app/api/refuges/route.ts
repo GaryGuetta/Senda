@@ -13,7 +13,7 @@ export async function GET() {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 12000);
     const rep = await fetch(REFUGES_API, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 60 },
       headers: { "User-Agent": "Senda/1.0" },
       signal: ctrl.signal,
     });

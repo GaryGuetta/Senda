@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
 import { REFUGE_COLORS, REFUGE_LABELS } from "./refugeStyles";
 import styles from "./RefugeDetail.module.css";
 
@@ -114,42 +113,11 @@ export default function RefugeDetail({ refuge, onBack, moreHref, moreLabel }: { 
     })();
   }, [refuge.id, refuge.lat, refuge.lon]);
 
-  const { user, requireLogin } = useAuth();
-  const [contrib, setContrib] = useState<any>(null);
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<any>({});
-  const [savingInfo, setSavingInfo] = useState(false);
-
-  useEffect(() => {
-    setContrib(null); setEditing(false);
-    fetch(`/api/refuges/contrib?id=${encodeURIComponent(refuge.id)}`)
-      .then(r => r.json()).then(d => { setContrib(d.contribution || null); })
-      .catch(() => {});
-  }, [refuge.id]);
-
-  const mAlt = contrib?.altitude ?? refuge.alt;
-  const mPlaces = contrib?.places ?? refuge.places;
-  const mDesc = contrib?.description ?? refuge.desc;
-  const eau = fmtBool(contrib?.eau ?? refuge.eau);
-  const bois = fmtBool(contrib?.bois ?? refuge.bois);
-
-  function openEdit() {
-    setForm({
-      eau: fmtBool(contrib?.eau ?? refuge.eau) || "",
-      bois: fmtBool(contrib?.bois ?? refuge.bois) || "",
-      places: mPlaces ?? "", altitude: mAlt ?? "", description: mDesc ?? "",
-    });
-    setEditing(true);
-  }
-  async function saveInfo() {
-    setSavingInfo(true);
-    try {
-      const r = await fetch("/api/refuges/contrib", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refugeId: refuge.id, ...form }) });
-      const d = await r.json();
-      if (r.ok) { setContrib(d.contribution); setEditing(false); }
-      else if (r.status === 401) requireLogin();
-    } finally { setSavingInfo(false); }
-  }
+  const mAlt = refuge.alt;
+  const mPlaces = refuge.places;
+  const mDesc = refuge.desc;
+  const eau = fmtBool(refuge.eau);
+  const bois = fmtBool(refuge.bois);
 
   return (
     <div className={styles.wrap}>
@@ -164,7 +132,7 @@ export default function RefugeDetail({ refuge, onBack, moreHref, moreLabel }: { 
         <div className={styles.region}>{refuge.region}{refuge.typeLabel ? ` · ${refuge.typeLabel}` : ""}</div>
       </div>
 
-      {/* Key facts (merged with community contributions) */}
+      {/* Key facts (from the refuges API) */}
       <div className={styles.facts}>
         <div className={styles.fact}><span className={styles.factVal}>{mAlt ?? "?"}</span><span className={styles.factLbl}>m altitude</span></div>
         <div className={styles.fact}><span className={styles.factVal}>{mPlaces ?? "?"}</span><span className={styles.factLbl}>places</span></div>
@@ -178,46 +146,6 @@ export default function RefugeDetail({ refuge, onBack, moreHref, moreLabel }: { 
         <span>{refuge.lat.toFixed(5)}, {refuge.lon.toFixed(5)}</span>
         <span className={styles.coordsLink}>ouvrir la carte →</span>
       </a>
-
-      {/* Edit info */}
-      {!editing && (
-        <div className={styles.editRow}>
-          <button className={styles.editBtn} onClick={() => user ? openEdit() : requireLogin()}>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            Corriger / compléter les infos
-          </button>
-          {contrib?.updatedBy && <span className={styles.editedBy}>maj par {contrib.updatedBy}</span>}
-        </div>
-      )}
-      {editing && (
-        <div className={styles.editForm}>
-          <div className={styles.editGrid}>
-            <label className={styles.editField}><span>Eau</span>
-              <select value={form.eau} onChange={e => setForm({ ...form, eau: e.target.value })}>
-                <option value="">Inconnu</option><option value="Oui">Oui</option><option value="Non">Non</option>
-              </select>
-            </label>
-            <label className={styles.editField}><span>Bois</span>
-              <select value={form.bois} onChange={e => setForm({ ...form, bois: e.target.value })}>
-                <option value="">Inconnu</option><option value="Oui">Oui</option><option value="Non">Non</option>
-              </select>
-            </label>
-            <label className={styles.editField}><span>Places</span>
-              <input type="text" value={form.places} onChange={e => setForm({ ...form, places: e.target.value })} placeholder="ex. 6" />
-            </label>
-            <label className={styles.editField}><span>Altitude (m)</span>
-              <input type="number" value={form.altitude} onChange={e => setForm({ ...form, altitude: e.target.value })} placeholder="ex. 2185" />
-            </label>
-          </div>
-          <label className={styles.editField}><span>Description</span>
-            <textarea rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="État, accès, équipement, remarques…" />
-          </label>
-          <div className={styles.editActions}>
-            <button className={styles.editCancel} onClick={() => setEditing(false)}>Annuler</button>
-            <button className={styles.editSave} onClick={saveInfo} disabled={savingInfo}>{savingInfo ? "…" : "Enregistrer"}</button>
-          </div>
-        </div>
-      )}
 
       {/* Weather */}
       <div className={styles.section}>

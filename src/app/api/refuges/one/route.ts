@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   if (!id) return NextResponse.json({ error: "id requis" }, { status: 400 });
   try {
     const origin = req.nextUrl.origin;
-    const rep = await fetch(`${origin}/api/refuges`, { next: { revalidate: 3600 } });
+    const rep = await fetch(`${origin}/api/refuges`, { next: { revalidate: 60 } });
     if (!rep.ok) return NextResponse.json({ error: "indisponible" }, { status: 502 });
     const list = await rep.json();
     const refuge = Array.isArray(list) ? list.find((r: any) => r.id === id) : null;
