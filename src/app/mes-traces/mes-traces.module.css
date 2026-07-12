@@ -39,3 +39,13 @@
 .gateBtn:hover { background: var(--ink); }
 
 .state { padding: 80px 24px; text-align: center; color: var(--stone); font-size: 15px; }
+
+.headerActions { display: flex; align-items: center; gap: 10px; }
+.reanalyzeBtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600; color: var(--pine);
+  padding: 9px 15px; border-radius: 10px; background: var(--paper-2); border: 1px solid var(--line-2);
+  transition: all 0.14s; white-space: nowrap;
+}
+.reanalyzeBtn:hover:not(:disabled) { border-color: var(--sage); background: rgba(94,122,85,0.06); }
+.reanalyzeBtn:disabled { opacity: 0.7; cursor: default; }

@@ -15,6 +15,29 @@ export default function MesTracesPage() {
   const [loading, setLoading] = useState(true);
   const [showImport, setShowImport] = useState(false);
   const [modelKey, setModelKey] = useState(0);
+  const [reanalyzing, setReanalyzing] = useState<number | null>(null);
+
+  async function reanalyzeAll() {
+    if (!confirm(`Ré-analyser vos ${trails.length} trace(s) avec les derniers calculs ? Cela peut prendre un moment (les commentaires et notes sont conservés).`)) return;
+    setReanalyzing(0);
+    let done = 0;
+    for (const t of trails) {
+      try {
+        const fd = new FormData();
+        fd.append("reanalyzeId", t.id);
+        await fetch("/api/gpx", { method: "POST", body: fd });
+      } catch { /* continue with the next one */ }
+      done++;
+      setReanalyzing(done);
+    }
+    // reload the freshly re-analysed trails
+    try {
+      const d = await fetch("/api/trails").then(r => r.json());
+      setTrails(Array.isArray(d) ? d : []);
+    } catch {}
+    setModelKey(k => k + 1);
+    setReanalyzing(null);
+  }
 
   function fetchTrails() {
     fetch("/api/trails").then(r => r.json()).then(d => {
@@ -50,10 +73,19 @@ export default function MesTracesPage() {
             {publicCount > 0 ? ` · ${publicCount} publiée${publicCount > 1 ? "s" : ""}` : ""}
           </p>
         </div>
-        <button className={styles.importBtn} onClick={() => setShowImport(true)}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 5v14M5 12h14" strokeLinecap="round"/></svg>
-          Importer un GPX
-        </button>
+        <div className={styles.headerActions}>
+          {trails.length > 0 && (
+            <button className={styles.reanalyzeBtn} onClick={reanalyzeAll} disabled={reanalyzing !== null}>
+              {reanalyzing !== null
+                ? `Ré-analyse ${reanalyzing}/${trails.length}…`
+                : "↻ Ré-analyser tout"}
+            </button>
+          )}
+          <button className={styles.importBtn} onClick={() => setShowImport(true)}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 5v14M5 12h14" strokeLinecap="round"/></svg>
+            Importer un GPX
+          </button>
+        </div>
       </div>
 
       {trails.length > 0 && (

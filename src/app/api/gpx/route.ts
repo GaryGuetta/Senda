@@ -937,30 +937,52 @@ export async function POST(req: NextRequest) {
     if (!userId) return NextResponse.json({ error: "Connecte-toi pour importer une trace" }, { status: 401 })
 
     const formData = await req.formData()
-    const file = formData.get("file") as File | null
-    if (!file) return NextResponse.json({ error: "Fichier manquant" }, { status: 400 })
-    if (!file.name.toLowerCase().endsWith(".gpx"))
-      return NextResponse.json({ error: "Format GPX requis" }, { status: 400 })
+    const reanalyzeId = (formData.get("reanalyzeId") as string | null) || null
 
-    const xml = await file.text()
-    const parsed = parseGPX(xml)
-    if (!parsed) return NextResponse.json({ error: "Impossible de lire le GPX" }, { status: 422 })
-    const points = parsed.points
+    let points: TrackPoint[]
+    let parsedName = ""
+    let existingTrail: any = null
 
-    // ── Metadata from the creation form ──────────────────────────────────
-    const nameInput = (formData.get("name") as string | null)?.trim()
-    const name = nameInput && nameInput.length > 0 ? nameInput : parsed.name
-    const description = (formData.get("description") as string | null)?.trim() || null
-    const isPublic = formData.get("isPublic") === "true"
-    const difficultyRaw = formData.get("difficulty") as string | null
-    const creatorDifficulty = difficultyRaw ? Math.max(1, Math.min(10, parseInt(difficultyRaw, 10))) : null
-    let photos: string[] = []
-    const photosRaw = formData.get("photos") as string | null
-    if (photosRaw) {
-      try { const arr = JSON.parse(photosRaw); if (Array.isArray(arr)) photos = arr.filter(p => typeof p === "string").slice(0, 8) } catch {}
+    if (reanalyzeId) {
+      // ── Re-analysis mode: take points from an existing trail and update it ──
+      existingTrail = await prisma.trail.findFirst({ where: { id: reanalyzeId, userId } })
+      if (!existingTrail) return NextResponse.json({ error: "Trace introuvable" }, { status: 404 })
+      const coords: any[] = (existingTrail.geojson as any)?.geometry?.coordinates ?? []
+      points = coords.map((c: number[]) => ({ lat: c[1], lng: c[0], ele: c[2] ?? null }))
+      parsedName = existingTrail.name
+      if (points.length < 2) return NextResponse.json({ error: "Trace vide" }, { status: 422 })
+    } else {
+      const file = formData.get("file") as File | null
+      if (!file) return NextResponse.json({ error: "Fichier manquant" }, { status: 400 })
+      if (!file.name.toLowerCase().endsWith(".gpx"))
+        return NextResponse.json({ error: "Format GPX requis" }, { status: 400 })
+      const xml = await file.text()
+      const parsed = parseGPX(xml)
+      if (!parsed) return NextResponse.json({ error: "Impossible de lire le GPX" }, { status: 422 })
+      points = parsed.points
+      parsedName = parsed.name
     }
-    // Description is mandatory for public traces
-    if (isPublic && (!description || description.length < 10)) {
+
+    // ── Metadata (from the form, or from the existing trail when re-analyzing) ──
+    const nameInput = (formData.get("name") as string | null)?.trim()
+    const name = reanalyzeId ? existingTrail.name : (nameInput && nameInput.length > 0 ? nameInput : parsedName)
+    const description = reanalyzeId ? (existingTrail.description ?? null) : ((formData.get("description") as string | null)?.trim() || null)
+    const isPublic = reanalyzeId ? !!existingTrail.isPublic : (formData.get("isPublic") === "true")
+    const difficultyRaw = formData.get("difficulty") as string | null
+    const creatorDifficulty = reanalyzeId
+      ? (existingTrail.difficulty ?? null)
+      : (difficultyRaw ? Math.max(1, Math.min(10, parseInt(difficultyRaw, 10))) : null)
+    let photos: string[] = []
+    if (reanalyzeId) {
+      if (Array.isArray(existingTrail.photos)) photos = existingTrail.photos as string[]
+    } else {
+      const photosRaw = formData.get("photos") as string | null
+      if (photosRaw) {
+        try { const arr = JSON.parse(photosRaw); if (Array.isArray(arr)) photos = arr.filter(p => typeof p === "string").slice(0, 8) } catch {}
+      }
+    }
+    // Description is mandatory for public traces (only enforced on new imports)
+    if (!reanalyzeId && isPublic && (!description || description.length < 10)) {
       return NextResponse.json({ error: "Une description d'au moins 10 caractères est requise pour publier une trace." }, { status: 400 })
     }
     console.log(`[GPX] "${name}" — ${points.length} pts · public=${isPublic} · ${photos.length} photos`)
@@ -1267,30 +1289,45 @@ export async function POST(req: NextRequest) {
     const center = { lat: points[midIdx].lat, lng: points[midIdx].lng }
     const vecStr = vectorToString(weightedVector)
 
-    const trail = await prisma.$queryRaw<any[]>`
-      INSERT INTO trails (id, name, description, distance, elevation, geojson, center, "isPublic", difficulty, photos, "featureVector", "userId", "createdAt")
-      VALUES (
-        gen_random_uuid()::text,
-        ${name},
-        ${description},
-        ${distKm},
-        ${elevGain},
-        ${JSON.stringify(geojson)}::jsonb,
-        ${JSON.stringify(center)}::jsonb,
-        ${isPublic},
-        ${creatorDifficulty},
-        ${JSON.stringify(photos)}::jsonb,
-        ${vecStr}::vector,
-        ${userId},
-        NOW()
-      )
-      RETURNING id, name, distance, elevation, center
-    `
-    const createdTrail = trail[0]
+    let createdTrail: any
+    if (reanalyzeId) {
+      // Re-analysis: update the existing trail in place (keep id, name, reviews, comments…)
+      await prisma.$executeRaw`
+        UPDATE trails SET
+          distance = ${distKm},
+          elevation = ${elevGain},
+          geojson = ${JSON.stringify(geojson)}::jsonb,
+          center = ${JSON.stringify(center)}::jsonb,
+          "featureVector" = ${vecStr}::vector
+        WHERE id = ${reanalyzeId} AND "userId" = ${userId}
+      `
+      createdTrail = { id: reanalyzeId, name, distance: distKm, elevation: elevGain, center }
+    } else {
+      const trail = await prisma.$queryRaw<any[]>`
+        INSERT INTO trails (id, name, description, distance, elevation, geojson, center, "isPublic", difficulty, photos, "featureVector", "userId", "createdAt")
+        VALUES (
+          gen_random_uuid()::text,
+          ${name},
+          ${description},
+          ${distKm},
+          ${elevGain},
+          ${JSON.stringify(geojson)}::jsonb,
+          ${JSON.stringify(center)}::jsonb,
+          ${isPublic},
+          ${creatorDifficulty},
+          ${JSON.stringify(photos)}::jsonb,
+          ${vecStr}::vector,
+          ${userId},
+          NOW()
+        )
+        RETURNING id, name, distance, elevation, center
+      `
+      createdTrail = trail[0]
+    }
 
     // Record the creator's stated difficulty as their own review, so it feeds
-    // the community aggregation and their personal model.
-    if (creatorDifficulty != null) {
+    // the community aggregation and their personal model. (New imports only.)
+    if (!reanalyzeId && creatorDifficulty != null) {
       try {
         await prisma.review.create({
           data: { trailId: createdTrail.id, userId, difficulty: creatorDifficulty,
