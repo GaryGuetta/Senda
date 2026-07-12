@@ -162,7 +162,7 @@ export default function RefugeDetail({ refuge, onBack }: { refuge: any; onBack: 
       <div className={styles.head}>
         <span className={styles.typeBadge} style={{ background: color }}>{REFUGE_LABELS[refuge.cat]}</span>
         <h2 className={styles.name}>{refuge.nom}</h2>
-        <div className={styles.region}>{refuge.region}</div>
+        <div className={styles.region}>{refuge.region}{refuge.typeLabel ? ` · ${refuge.typeLabel}` : ""}</div>
       </div>
 
       {/* Key facts (merged with community contributions) */}
@@ -172,6 +172,13 @@ export default function RefugeDetail({ refuge, onBack }: { refuge: any; onBack: 
         {eau && <div className={styles.fact}><span className={styles.factVal} style={{ fontSize: 16 }}>{eau === "Oui" ? "💧" : "—"}</span><span className={styles.factLbl}>eau</span></div>}
         {bois && <div className={styles.fact}><span className={styles.factVal} style={{ fontSize: 16 }}>{bois === "Oui" ? "🪵" : "—"}</span><span className={styles.factLbl}>bois</span></div>}
       </div>
+
+      {/* Coordinates */}
+      <a className={styles.coords} href={`https://www.openstreetmap.org/?mlat=${refuge.lat}&mlon=${refuge.lon}#map=15/${refuge.lat}/${refuge.lon}`} target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span>{refuge.lat.toFixed(5)}, {refuge.lon.toFixed(5)}</span>
+        <span className={styles.coordsLink}>ouvrir la carte →</span>
+      </a>
 
       {/* Edit info */}
       {!editing && (
@@ -283,12 +290,10 @@ export default function RefugeDetail({ refuge, onBack }: { refuge: any; onBack: 
         <CommentsSection targetType="refuge" targetId={refuge.id} placeholder="Votre passage, l'état du refuge, un conseil…" />
       </div>
 
-      {refuge.lien && (
-        <a className={styles.link} href={refuge.lien} target="_blank" rel="noopener noreferrer">
-          Voir la fiche sur pyrenees-refuges.com
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </a>
-      )}
+      <a className={styles.apiBtn} href={refuge.lien || "https://refuges-pyrenees.vercel.app"} target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        Plus d'infos ou modifier ce lieu
+      </a>
 
       <div className={styles.warn}>
         ⚠️ Données collectées automatiquement, non vérifiées sur le terrain. À confirmer avant de partir.

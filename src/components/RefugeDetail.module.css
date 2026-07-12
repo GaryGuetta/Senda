@@ -166,3 +166,22 @@
 .commentDate2:focus { outline: none; border-color: var(--sage); }
 .waterSub { color: var(--stone); font-weight: 400; }
 .waterPotable { color: var(--sage); font-weight: 600; }
+
+/* Coordinates row */
+.coords {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 18px;
+  font-size: 12.5px; color: var(--stone); font-variant-numeric: tabular-nums;
+  padding: 9px 12px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px;
+  transition: all 0.13s;
+}
+.coords:hover { border-color: var(--sage); color: var(--forest); }
+.coordsLink { margin-left: auto; font-weight: 600; color: var(--pine); }
+
+/* API site button */
+.apiBtn {
+  display: inline-flex; align-items: center; gap: 8px; width: 100%; justify-content: center;
+  font-size: 13.5px; font-weight: 600; color: var(--pine);
+  padding: 11px 16px; border-radius: 11px; background: var(--paper-2); border: 1px solid var(--line-2);
+  margin-bottom: 16px; transition: all 0.14s;
+}
+.apiBtn:hover { border-color: var(--sage); background: rgba(94,122,85,0.06); color: var(--forest); }
