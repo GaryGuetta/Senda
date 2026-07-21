@@ -259,3 +259,16 @@
 }
 .saveProjBtn:hover:not(:disabled) { border-color: var(--sage); background: rgba(94,122,85,0.06); }
 .saveProjBtn:disabled { opacity: 0.55; }
+
+/* Live stats while drawing an itinerary */
+.drawStats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;
+  animation: fadeStatsIn 0.25s ease;
+}
+@keyframes fadeStatsIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.drawStat {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 6px; border-radius: 11px; background: var(--paper-2); border: 1px solid var(--line);
+}
+.drawStatVal { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--forest); line-height: 1; font-variant-numeric: tabular-nums; }
+.drawStatLbl { font-size: 10.5px; color: var(--stone); }

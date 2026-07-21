@@ -10,29 +10,69 @@ interface Props {
   compact?: boolean;    // thinner styling for cards
 }
 
+function haversine(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6371000, toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat), dLng = toRad(bLng - aLng);
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
 // ─── The signature element ────────────────────────────────────────────────────
 // A cross-section of the trail's elevation, with the area under the curve filled
-// by the LOCAL difficulty at each point (green → red). This is the artifact that
-// makes each trail instantly recognisable — topography + per-segment difficulty
-// in one silhouette. Built entirely from data the app already computes.
+// by the LOCAL difficulty at each point (green → red).
+//
+// Geometrically honest: the x-axis is the REAL cumulative distance along the
+// track (not the GPX point index — points are denser in switchbacks, which used
+// to stretch climbs and shift the colors). The silhouette is resampled at
+// uniform distance steps, then snapped to the track's true summit and low point
+// so no peak is missed by sampling.
 export default function ElevationProfile({ geojson, width = 300, height = 64, showAxis = false, compact = false }: Props) {
   const data = useMemo(() => {
     const props = geojson?.properties ?? {};
     const elevations: number[] = props.elevations ?? [];
     const segScores: number[] = props.segmentScores ?? [];
-    if (elevations.length < 2) return null;
+    const coords: number[][] = geojson?.geometry?.coordinates ?? [];
+    const n = elevations.length;
+    if (n < 2) return null;
 
-    // Downsample to a manageable number of points for a clean silhouette
-    const target = Math.min(elevations.length, 120);
-    const step = (elevations.length - 1) / (target - 1);
-    const pts: { ele: number; score: number }[] = [];
-    for (let i = 0; i < target; i++) {
-      const idx = Math.round(i * step);
-      const ele = elevations[idx] ?? 0;
-      const sIdx = segScores.length ? Math.min(Math.round(idx * (segScores.length - 1) / (elevations.length - 1)), segScores.length - 1) : -1;
-      const score = sIdx >= 0 ? segScores[sIdx] : 5;
-      pts.push({ ele, score });
+    // Cumulative distance along the track. Falls back to index spacing if the
+    // coordinates are missing or don't line up with the elevation array.
+    const cum = new Array(n).fill(0);
+    const hasCoords = Array.isArray(coords) && coords.length === n;
+    for (let i = 1; i < n; i++) {
+      cum[i] = cum[i - 1] + (hasCoords ? Math.max(0.01, haversine(coords[i - 1][1], coords[i - 1][0], coords[i][1], coords[i][0])) : 1);
     }
+    const total = cum[n - 1] || 1;
+
+    // Resample at uniform DISTANCE steps (linear interpolation between points).
+    const target = Math.min(Math.max(n, 2), 160);
+    const pts: { ele: number; score: number }[] = [];
+    let j = 0;
+    for (let i = 0; i < target; i++) {
+      const d = (i / (target - 1)) * total;
+      while (j < n - 2 && cum[j + 1] < d) j++;
+      const span = cum[j + 1] - cum[j] || 1;
+      const t = Math.min(1, Math.max(0, (d - cum[j]) / span));
+      const ele = elevations[j] + (elevations[j + 1] - elevations[j]) * t;
+      const sIdx = segScores.length
+        ? Math.min(Math.round((t < 0.5 ? j : j + 1) * (segScores.length - 1) / (n - 1)), segScores.length - 1)
+        : -1;
+      pts.push({ ele, score: sIdx >= 0 ? segScores[sIdx] : 5 });
+    }
+
+    // Snap the samples nearest to the track's real extremes, so the summit and
+    // the low point are always exactly represented (sampling can't miss them).
+    let iMax = 0, iMin = 0;
+    for (let i = 1; i < n; i++) {
+      if (elevations[i] > elevations[iMax]) iMax = i;
+      if (elevations[i] < elevations[iMin]) iMin = i;
+    }
+    const snap = (rawIdx: number) => {
+      const k = Math.round((cum[rawIdx] / total) * (target - 1));
+      pts[Math.min(k, target - 1)].ele = elevations[rawIdx];
+    };
+    snap(iMax); snap(iMin);
+
     const minEle = Math.min(...pts.map(p => p.ele));
     const maxEle = Math.max(...pts.map(p => p.ele));
     return { pts, minEle, maxEle };
@@ -47,12 +87,13 @@ export default function ElevationProfile({ geojson, width = 300, height = 64, sh
   const axisW = showAxis ? 34 : 0;
   const plotW = width - axisW - pad;
   const plotH = height - pad * 2;
-  const range = Math.max(1, maxEle - minEle);
+  // Minimum vertical span: a near-flat walk should LOOK flat, not like the Alps.
+  const range = Math.max(80, maxEle - minEle);
 
   const x = (i: number) => axisW + (i / (pts.length - 1)) * plotW;
   const y = (ele: number) => pad + plotH - ((ele - minEle) / range) * plotH * 0.92 - plotH * 0.04;
 
-  // Build gradient stops from local difficulty along the track
+  // Build gradient stops from local difficulty along the track (distance-aligned)
   const stops = pts.map((p, i) => (
     <stop key={i} offset={`${(i / (pts.length - 1)) * 100}%`} stopColor={difficultyColor(p.score)} />
   ));

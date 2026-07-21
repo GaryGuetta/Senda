@@ -68,6 +68,32 @@ export default function PlanifierPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [loadingTrail, setLoadingTrail] = useState(false);
 
+  // Live stats while drawing: distance is instant (from the routed path),
+  // D+ and estimated time arrive once elevations are fetched (debounced).
+  const [drawStats, setDrawStats] = useState<{ distKm: number; dplus: number | null; hours: number | null } | null>(null);
+  useEffect(() => {
+    if (!drawing || routedPath.length < 2) { setDrawStats(null); return; }
+    let distM = 0;
+    for (let i = 1; i < routedPath.length; i++) {
+      distM += haversine(routedPath[i - 1][0], routedPath[i - 1][1], routedPath[i][0], routedPath[i][1]);
+    }
+    const distKm = distM / 1000;
+    setDrawStats({ distKm, dplus: null, hours: null });
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        // Adaptive sampling: ~200 elevation points max, whatever the length.
+        const step = Math.max(120, Math.round(distM / 200));
+        const pts = densify(routedPath, step);
+        const eles = await fetchElevations(pts);
+        if (cancelled) return;
+        const dplus = totalAscent(eles);
+        setDrawStats({ distKm, dplus, hours: naismith(distM, dplus, 1) });
+      } catch { /* keep distance-only stats */ }
+    }, 700);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [routedPath, drawing]);
+
   // Planner
   const [planning, setPlanning] = useState(false);
   const [route, setRoute] = useState<[number, number][] | null>(null);
@@ -262,6 +288,22 @@ export default function PlanifierPage() {
                 {drawPts.length} point{drawPts.length > 1 ? "s" : ""} placé{drawPts.length > 1 ? "s" : ""}
                 {routingLive && <span className={styles.routingLive}><span className={styles.spinMini} /> calcul du chemin…</span>}
               </div>
+              {drawStats && (
+                <div className={styles.drawStats}>
+                  <div className={styles.drawStat}>
+                    <span className={styles.drawStatVal}>{drawStats.distKm.toFixed(drawStats.distKm >= 10 ? 1 : 2)}</span>
+                    <span className={styles.drawStatLbl}>km</span>
+                  </div>
+                  <div className={styles.drawStat}>
+                    <span className={styles.drawStatVal}>{drawStats.dplus != null ? `+${drawStats.dplus}` : "…"}</span>
+                    <span className={styles.drawStatLbl}>m D+</span>
+                  </div>
+                  <div className={styles.drawStat}>
+                    <span className={styles.drawStatVal}>{drawStats.hours != null ? fmtH(drawStats.hours) : "…"}</span>
+                    <span className={styles.drawStatLbl}>durée est.</span>
+                  </div>
+                </div>
+              )}
               <div className={styles.drawBtns}>
                 <button className={styles.drawUndo} onClick={() => setDrawPts(p => p.slice(0, -1))} disabled={!drawPts.length}>Annuler le dernier</button>
                 <button className={styles.drawClear} onClick={() => setDrawPts([])} disabled={!drawPts.length}>Tout effacer</button>
