@@ -216,6 +216,24 @@ export function densify(pts: [number, number][], stepM = 250): [number, number][
 
 // Fetch elevations for a list of [lat,lon] via Open-Meteo (batches of 100).
 export async function fetchElevations(pts: [number, number][]): Promise<(number | null)[]> {
+  if (pts.length === 0) return [];
+  // Primary path: our own server proxy (avoids browser CORS on Open-Meteo,
+  // caches results, and falls back to a second elevation provider server-side).
+  try {
+    const rep = await fetch("/api/elevation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ points: pts }),
+    });
+    if (rep.ok) {
+      const d = await rep.json();
+      const arr = d?.elevations;
+      if (Array.isArray(arr) && arr.length === pts.length) return arr;
+    }
+  } catch { /* fall through to direct call */ }
+
+  // Last-resort fallback: direct call (works server-side / in environments
+  // where CORS isn't an issue). Batches of 100.
   const out: (number | null)[] = [];
   for (let i = 0; i < pts.length; i += 100) {
     const chunk = pts.slice(i, i + 100);

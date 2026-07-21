@@ -96,11 +96,15 @@ function waterIcon(potable?: boolean) {
 }
 
 function waypointIcon(i: number, total: number, isEnd: boolean) {
-  const bg = i === 0 ? "#16A34A" : i === total - 1 ? "#E11D48" : "#ff5d73";
-  const label = i === 0 ? "D" : i === total - 1 ? "A" : String(i + 1);
-  const s = isEnd ? 22 : 18;
+  const isStart = i === 0;
+  const isFinish = i === total - 1;
+  const bg = isStart ? "#16A34A" : isFinish ? "#E11D48" : "#ff5d73";
+  // Départ = D, arrivée = A, points intermédiaires numérotés 1, 2, 3…
+  const label = isStart ? "D" : isFinish ? "A" : String(i);
+  const s = isEnd ? 24 : 20;
+  const fs = isEnd ? 12 : 11;
   return L.divIcon({
-    html: `<div style="width:${s}px;height:${s}px;border-radius:50%;background:${bg};color:#fff;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-weight:700;font-size:${isEnd ? 11 : 10}px;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);cursor:grab;">${label}</div>`,
+    html: `<div style="width:${s}px;height:${s}px;border-radius:50%;background:${bg};color:#fff;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-weight:700;font-size:${fs}px;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.45);cursor:grab;">${label}</div>`,
     className: "", iconSize: [s, s], iconAnchor: [s / 2, s / 2],
   });
 }
