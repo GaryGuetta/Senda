@@ -41,11 +41,42 @@ export default function PlanifierPage() {
   const [savingProj, setSavingProj] = useState(false);
   const [drawPts, setDrawPts] = useState<[number, number][]>([]);
   const [routedPath, setRoutedPath] = useState<[number, number][]>([]);
+  const [snap, setSnap] = useState(true);              // accrochage aux sentiers on/off
+  const [undoStack, setUndoStack] = useState<[number, number][][]>([]);
+  const [redoStack, setRedoStack] = useState<[number, number][][]>([]);
+
+  // Every edit goes through this so undo/redo stays consistent.
+  function commitPts(next: [number, number][] | ((p: [number, number][]) => [number, number][])) {
+    setDrawPts(prev => {
+      const value = typeof next === "function" ? (next as any)(prev) : next;
+      setUndoStack(s => [...s.slice(-49), prev]);
+      setRedoStack([]);
+      return value;
+    });
+  }
+  function undo() {
+    setUndoStack(s => {
+      if (!s.length) return s;
+      const prev = s[s.length - 1];
+      setDrawPts(cur => { setRedoStack(r => [...r, cur]); return prev; });
+      return s.slice(0, -1);
+    });
+  }
+  function redo() {
+    setRedoStack(r => {
+      if (!r.length) return r;
+      const next = r[r.length - 1];
+      setDrawPts(cur => { setUndoStack(s => [...s, cur]); return next; });
+      return r.slice(0, -1);
+    });
+  }
   const [routingLive, setRoutingLive] = useState(false);
 
-  // Live pedestrian routing: snap the drawn waypoints onto real paths/trails.
+  // Live pedestrian routing: when snap is ON, snap the drawn waypoints onto
+  // real paths/trails. When OFF, the route is the straight polyline (waypoints).
   useEffect(() => {
     if (drawPts.length < 2) { setRoutedPath(drawPts); return; }
+    if (!snap) { setRoutedPath(drawPts); return; }   // mode point-par-point : ligne directe
     let cancelled = false;
     setRoutingLive(true);
     (async () => {
@@ -64,15 +95,29 @@ export default function PlanifierPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [drawPts]);
+  }, [drawPts, snap]);
+
+  // Keyboard shortcuts while drawing: Ctrl/Cmd+Z = undo, Ctrl/Cmd+Shift+Z = redo.
+  useEffect(() => {
+    if (!drawing) return;
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawing]);
   const [busy, setBusy] = useState<string | null>(null);
   const [loadingTrail, setLoadingTrail] = useState(false);
 
   // Live stats while drawing: distance is instant (from the routed path),
   // D+ and estimated time arrive once elevations are fetched (debounced).
   const [drawStats, setDrawStats] = useState<{ distKm: number; dplus: number | null; hours: number | null } | null>(null);
+  const [drawProfileGeojson, setDrawProfileGeojson] = useState<any>(null);
   useEffect(() => {
-    if (!drawing || routedPath.length < 2) { setDrawStats(null); return; }
+    if (!drawing || routedPath.length < 2) { setDrawStats(null); setDrawProfileGeojson(null); return; }
     let distM = 0;
     for (let i = 1; i < routedPath.length; i++) {
       distM += haversine(routedPath[i - 1][0], routedPath[i - 1][1], routedPath[i][0], routedPath[i][1]);
@@ -89,6 +134,9 @@ export default function PlanifierPage() {
         if (cancelled) return;
         const dplus = totalAscent(eles);
         setDrawStats({ distKm, dplus, hours: naismith(distM, dplus, 1) });
+        // Feed the live elevation profile shown in the drawing panel.
+        const gpxPts: GpxPoint[] = pts.map((p, i) => ({ lat: p[0], lon: p[1], ele: eles[i] ?? null }));
+        setDrawProfileGeojson(buildRouteGeojson(gpxPts));
       } catch { /* keep distance-only stats */ }
     }, 700);
     return () => { cancelled = true; clearTimeout(timer); };
@@ -218,6 +266,7 @@ export default function PlanifierPage() {
 
   function reset() {
     setPlanning(false); setDrawing(false); setDrawPts([]); setRoutedPath([]); setRoute(null);
+    setUndoStack([]); setRedoStack([]);
     setGpxPoints(null); setStages(null); setNearRefuges(null); setWater([]);
     setShowEntry(true);
   }
@@ -283,7 +332,25 @@ export default function PlanifierPage() {
             <div className={styles.planner}>
               <button className={styles.back} onClick={reset}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round"/></svg>Annuler</button>
               <h2 className={styles.title}>Tracer l'itinéraire</h2>
-              <p className={styles.subtitle}>Cliquez sur la carte pour poser les points de votre parcours. Le tracé suit automatiquement les chemins et sentiers.</p>
+
+              {/* Snap mode toggle */}
+              <div className={styles.modeToggle}>
+                <button className={`${styles.modeBtn} ${snap ? styles.modeBtnActive : ""}`} onClick={() => setSnap(true)}>
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 20l-5.5-3V4L9 7m0 13l6-3m-6 3V7m6 10l5.5 3V7L15 4m0 13V4m0 0L9 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Suivre les sentiers
+                </button>
+                <button className={`${styles.modeBtn} ${!snap ? styles.modeBtnActive : ""}`} onClick={() => setSnap(false)}>
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20L20 4M4 4l16 16" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Ligne droite
+                </button>
+              </div>
+              <p className={styles.subtitle}>
+                {snap
+                  ? "Cliquez sur la carte : le tracé suit automatiquement les chemins et sentiers entre vos points."
+                  : "Cliquez sur la carte : les points sont reliés en ligne droite (utile hors sentier)."}
+                <br /><span className={styles.hintLine}>Glissez un point pour le déplacer · cliquez sur la trace pour insérer un point · clic droit sur un point pour le supprimer.</span>
+              </p>
+
               <div className={styles.drawInfo}>
                 {drawPts.length} point{drawPts.length > 1 ? "s" : ""} placé{drawPts.length > 1 ? "s" : ""}
                 {routingLive && <span className={styles.routingLive}><span className={styles.spinMini} /> calcul du chemin…</span>}
@@ -304,9 +371,24 @@ export default function PlanifierPage() {
                   </div>
                 </div>
               )}
-              <div className={styles.drawBtns}>
-                <button className={styles.drawUndo} onClick={() => setDrawPts(p => p.slice(0, -1))} disabled={!drawPts.length}>Annuler le dernier</button>
-                <button className={styles.drawClear} onClick={() => setDrawPts([])} disabled={!drawPts.length}>Tout effacer</button>
+
+              {/* Live elevation profile while drawing */}
+              {drawProfileGeojson && (
+                <div className={styles.drawProfile}>
+                  <ElevationChart geojson={drawProfileGeojson} height={96} onHover={setHover} fillColor="#5E7A55" />
+                </div>
+              )}
+
+              <div className={styles.editRow2}>
+                <button className={styles.iconBtn} onClick={undo} disabled={!undoStack.length} title="Annuler (Ctrl+Z)">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 14L4 9l5-5" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 9h11a5 5 0 015 5v0a5 5 0 01-5 5H9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Annuler
+                </button>
+                <button className={styles.iconBtn} onClick={redo} disabled={!redoStack.length} title="Rétablir (Ctrl+Maj+Z)">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 14l5-5-5-5" strokeLinecap="round" strokeLinejoin="round"/><path d="M20 9H9a5 5 0 00-5 5v0a5 5 0 005 5h6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Rétablir
+                </button>
+                <button className={styles.drawClear} onClick={() => commitPts([])} disabled={!drawPts.length}>Tout effacer</button>
               </div>
               <button className={styles.calcBtn} onClick={finishDraw} disabled={drawPts.length < 2 || !!busy}>
                 {busy || "Terminer et planifier"}
@@ -441,7 +523,29 @@ export default function PlanifierPage() {
             onBoundsChange={(b) => { setLiveBounds(b); setMoved(true); }}
             autoFit={!areaFilter && !selected && !route && !drawing}
             route={route} planStops={planStops} daySegments={daySegments}
-            drawing={drawing} drawPts={drawPts} drawRouted={routedPath} onMapClick={(lat, lon) => setDrawPts(p => [...p, [lat, lon]])}
+            drawing={drawing} drawPts={drawPts} drawRouted={routedPath} snap={snap}
+            onMapClick={(lat, lon) => commitPts(p => [...p, [lat, lon]])}
+            onDragPoint={(i, lat, lon) => commitPts(p => p.map((pt, j) => j === i ? [lat, lon] : pt))}
+            onDeletePoint={(i) => commitPts(p => p.filter((_, j) => j !== i))}
+            onInsertPoint={(routedIdx, lat, lon) => {
+              // Map the clicked routed-vertex to the waypoint segment it belongs to,
+              // then insert the new waypoint between the right pair.
+              commitPts(p => {
+                if (p.length < 2) return [...p, [lat, lon]];
+                // Nearest waypoint to the click decides the insertion segment.
+                let best = 0, bestD = Infinity;
+                for (let k = 0; k < p.length; k++) {
+                  const dLat = p[k][0] - lat, dLon = p[k][1] - lon;
+                  const d = dLat * dLat + dLon * dLon;
+                  if (d < bestD) { bestD = d; best = k; }
+                }
+                // Insert after `best` unless the click is clearly before the first point.
+                const insertAt = best === 0 ? 1 : Math.min(best + 1, p.length);
+                const next = p.slice();
+                next.splice(insertAt, 0, [lat, lon]);
+                return next;
+              });
+            }}
             waterPoints={water.filter(w => w.forme === "point").map(w => ({ lat: w.lat, lon: w.lon, type: w.type, potable: w.potable, nom: w.nom }))}
             waterZones={water.filter(w => w.forme === "zone").map(w => ({ ligne: w.ligne || [], type: w.type, nom: w.nom }))}
             hover={hover ? [hover.lat, hover.lng] : null}

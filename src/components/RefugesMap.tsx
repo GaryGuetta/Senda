@@ -64,6 +64,10 @@ interface Props {
   drawPts?: [number, number][];           // in-progress drawn points (waypoints)
   drawRouted?: [number, number][];        // path snapped to real trails
   onMapClick?: (lat: number, lon: number) => void;
+  onDragPoint?: (index: number, lat: number, lon: number) => void;   // move a waypoint
+  onDeletePoint?: (index: number) => void;                            // remove a waypoint
+  onInsertPoint?: (afterRoutedIdx: number, lat: number, lon: number) => void; // insert on the line
+  snap?: boolean;                         // whether clicks snap to trails
   waterPoints?: { lat: number; lon: number; type: string; potable?: boolean; nom?: string | null }[];
   waterZones?: { ligne: [number, number][]; type: string; nom?: string | null }[];
   hover?: [number, number] | null;
@@ -91,9 +95,19 @@ function waterIcon(potable?: boolean) {
   });
 }
 
+function waypointIcon(i: number, total: number, isEnd: boolean) {
+  const bg = i === 0 ? "#16A34A" : i === total - 1 ? "#E11D48" : "#ff5d73";
+  const label = i === 0 ? "D" : i === total - 1 ? "A" : String(i + 1);
+  const s = isEnd ? 22 : 18;
+  return L.divIcon({
+    html: `<div style="width:${s}px;height:${s}px;border-radius:50%;background:${bg};color:#fff;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-weight:700;font-size:${isEnd ? 11 : 10}px;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);cursor:grab;">${label}</div>`,
+    className: "", iconSize: [s, s], iconAnchor: [s / 2, s / 2],
+  });
+}
+
 const PYRENEES: [number, number] = [42.72, 0.55];
 
-export default function RefugesMap({ refuges, selectedId = null, hoveredId = null, onSelect, onHover, onBoundsChange, autoFit = true, route = null, planStops = [], daySegments = [], drawing = false, drawPts = [], drawRouted = [], onMapClick, waterPoints = [], waterZones = [], hover = null }: Props) {
+export default function RefugesMap({ refuges, selectedId = null, hoveredId = null, onSelect, onHover, onBoundsChange, autoFit = true, route = null, planStops = [], daySegments = [], drawing = false, drawPts = [], drawRouted = [], onMapClick, onDragPoint, onDeletePoint, onInsertPoint, snap = true, waterPoints = [], waterZones = [], hover = null }: Props) {
   return (
     <MapContainer center={PYRENEES} zoom={8} style={{ width: "100%", height: "100%" }} zoomControl={true}>
       <TileLayer url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" attribution="© OpenTopoMap" maxZoom={17} />
@@ -103,20 +117,57 @@ export default function RefugesMap({ refuges, selectedId = null, hoveredId = nul
 
       {drawing && onMapClick && <ClickHandler onClick={onMapClick} />}
 
-      {/* In-progress drawn route */}
+      {/* In-progress editable route */}
       {drawing && drawPts.length > 0 && (
         <>
-          {/* Routed path following real trails (solid). Falls back to straight waypoints. */}
+          {/* Routed path following real trails (solid) — clickable to insert a point.
+              Falls back to dashed straight waypoints when routing is unavailable. */}
           {drawRouted && drawRouted.length > 1 ? (
-            <Polyline positions={drawRouted} pathOptions={{ color: "#ff5d73", weight: 4, opacity: 0.95 }} />
+            <Polyline
+              positions={drawRouted}
+              pathOptions={{ color: "#ff5d73", weight: 4, opacity: 0.95 }}
+              eventHandlers={onInsertPoint ? {
+                click: (e: any) => {
+                  // Find the nearest routed vertex to decide where to insert.
+                  let best = 0, bestD = Infinity;
+                  const { lat, lng } = e.latlng;
+                  for (let i = 0; i < drawRouted.length; i++) {
+                    const dLat = drawRouted[i][0] - lat, dLon = drawRouted[i][1] - lng;
+                    const d = dLat * dLat + dLon * dLon;
+                    if (d < bestD) { bestD = d; best = i; }
+                  }
+                  onInsertPoint(best, lat, lng);
+                  L.DomEvent.stop(e);
+                },
+              } : undefined}
+            />
           ) : (
             drawPts.length > 1 && <Polyline positions={drawPts} pathOptions={{ color: "#ff5d73", weight: 3, opacity: 0.6, dashArray: "7 7" }} />
           )}
-          {/* Waypoints the user clicked */}
-          {drawPts.map((p, i) => (
-            <CircleMarker key={`dp-${i}`} center={p} radius={i === 0 || i === drawPts.length - 1 ? 6 : 4}
-              pathOptions={{ color: "#fff", weight: 2, fillColor: "#ff5d73", fillOpacity: 1 }} />
-          ))}
+          {/* Draggable numbered waypoints. Drag to reshape, right-click / click to delete. */}
+          {drawPts.map((p, i) => {
+            const isEnd = i === 0 || i === drawPts.length - 1;
+            return (
+              <Marker
+                key={`wp-${i}`}
+                position={p}
+                draggable={!!onDragPoint}
+                icon={waypointIcon(i, drawPts.length, isEnd)}
+                zIndexOffset={1500}
+                eventHandlers={{
+                  dragend: (e: any) => { const ll = e.target.getLatLng(); onDragPoint && onDragPoint(i, ll.lat, ll.lng); },
+                  contextmenu: (e: any) => { onDeletePoint && onDeletePoint(i); L.DomEvent.stop(e); },
+                }}
+              >
+                <Tooltip direction="top" offset={[0, -14]} opacity={1} className="trail-tip">
+                  <div style={{ fontFamily: "Inter,sans-serif", fontSize: 11.5, fontWeight: 600, color: "var(--ink)" }}>
+                    Point {i + 1}{isEnd ? (i === 0 ? " · départ" : " · arrivée") : ""}<br />
+                    <span style={{ color: "var(--stone)", fontWeight: 500 }}>glisser pour déplacer · clic droit = supprimer</span>
+                  </div>
+                </Tooltip>
+              </Marker>
+            );
+          })}
         </>
       )}
 
