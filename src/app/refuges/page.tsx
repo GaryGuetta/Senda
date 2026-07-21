@@ -107,7 +107,7 @@ export default function PlanifierPage() {
 
   const q = query.trim().toLowerCase();
   const shown = useMemo(() => refuges.filter(r => {
-    if (q && !r.nom.toLowerCase().includes(q) && !r.region.toLowerCase().includes(q)) return false;
+    if (q && !r.nom.toLowerCase().includes(q) && !r.region.toLowerCase().includes(q) && !(r.ville || "").toLowerCase().includes(q)) return false;
     if (typeFilter && r.cat !== typeFilter) return false;
     if (areaFilter && !inBounds(r, areaFilter)) return false;
     return true;
@@ -336,7 +336,7 @@ export default function PlanifierPage() {
             <>
               <div className={styles.header}>
                 <h1 className={styles.title}>Refuges & cabanes</h1>
-                <p className={styles.subtitle}>Les abris de montagne des Pyrénées</p>
+                <p className={styles.subtitle}>1 622 abris des deux versants — France, Espagne, Andorre</p>
                 {!loading && !error && (
                   <div className={styles.stats}>
                     <div className={styles.stat}><span className={styles.statNum}>{counts.total}</span><span className={styles.statLbl}>lieux</span></div>
@@ -352,7 +352,7 @@ export default function PlanifierPage() {
               <div className={styles.filters}>
                 <div className={styles.searchWrap}>
                   <svg className={styles.searchIcon} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" strokeLinecap="round"/></svg>
-                  <input className={styles.search} value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher un lieu, une région…" />
+                  <input className={styles.search} value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher un lieu, une commune, une région…" />
                   {query && <button className={styles.searchClear} onClick={() => setQuery("")}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round"/></svg></button>}
                 </div>
                 <div className={styles.typeRow}>
@@ -373,7 +373,7 @@ export default function PlanifierPage() {
                 : error ? <div className={styles.state}>Impossible de charger les refuges.</div>
                 : shown.length === 0 ? <div className={styles.state}>Aucun lieu ne correspond.</div>
                 : (
-                  <div className={styles.list}>
+                  <div className={`${styles.list} stagger`}>
                     {shown.slice(0, 400).map(r => (
                       <button key={r.id} className={`${styles.item} ${hoveredId === r.id ? styles.itemHover : ""}`}
                         onMouseEnter={() => setHoveredId(r.id)} onMouseLeave={() => setHoveredId(null)} onClick={() => setSelected(r)}>

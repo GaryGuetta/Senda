@@ -70,7 +70,7 @@
   padding: 11px 12px; border-radius: 12px; background: transparent;
   border: 1px solid transparent; transition: all 0.13s;
 }
-.item:hover, .itemHover { background: var(--paper-2); border-color: var(--line-2); }
+.item:hover, .itemHover { background: var(--paper-2); border-color: var(--line-2); transform: translateX(3px); box-shadow: 0 2px 10px rgba(22,36,28,0.05); }
 .itemDot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--paper); box-shadow: 0 0 0 1px var(--line-2); }
 .itemInfo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .itemName { font-size: 14px; font-weight: 600; color: var(--forest); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

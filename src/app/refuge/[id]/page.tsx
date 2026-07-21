@@ -34,8 +34,8 @@ export default function RefugePage() {
         <RefugeDetail
           refuge={refuge}
           onBack={() => router.push("/refuges")}
-          moreHref={refuge.lien || "https://refuges-pyrenees.vercel.app"}
-          moreLabel="Modifier ce lieu sur refuges-pyrenees"
+          moreHref={refuge.lien || undefined}
+          moreLabel="Voir sur le site communautaire refuges-pyrenees"
         />
       </div>
     </div>

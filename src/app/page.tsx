@@ -45,7 +45,7 @@ export default function Home() {
             </h1>
             <p className={styles.lede}>
               Senda calcule la difficulté réelle de chaque sentier et l'adapte à votre ressenti,
-              cartographie les refuges et cabanes des Pyrénées, et planifie vos randos sur plusieurs
+              recense les 1 622 refuges, cabanes et abris des deux versants des Pyrénées, et planifie vos randos sur plusieurs
               jours — étapes, couchage et points d'eau compris.
             </p>
             <div className={styles.heroActions}>
@@ -90,8 +90,8 @@ export default function Home() {
           </div>
           <div className={styles.statDivider} />
           <div className={styles.statCell}>
-            <span className={styles.statNum}>3</span>
-            <span className={styles.statLbl}>régions des Pyrénées</span>
+            <span className={styles.statNum}>6</span>
+            <span className={styles.statLbl}>régions — France, Espagne, Andorre</span>
           </div>
           <div className={styles.statDivider} />
           <div className={styles.statCell}>

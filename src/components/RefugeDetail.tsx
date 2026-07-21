@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "./AuthProvider";
+import CommentsSection from "./CommentsSection";
 import { REFUGE_COLORS, REFUGE_LABELS } from "./refugeStyles";
 import styles from "./RefugeDetail.module.css";
 
@@ -20,6 +22,7 @@ const WMO: Record<number, [string, string]> = {
 };
 const wmo = (c: number): [string, string] => WMO[c] ?? ["🌡️", "—"];
 const JOURS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+const MOIS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
 
 function fmtBool(v: any): string | null {
   if (v == null || v === "") return null;
@@ -29,13 +32,45 @@ function fmtBool(v: any): string | null {
   return v.toString();
 }
 
+function fmtDateFr(iso: string | null): string | null {
+  if (!iso) return null;
+  try { return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }); }
+  catch { return null; }
+}
+
 export default function RefugeDetail({ refuge, onBack, moreHref, moreLabel }: { refuge: any; onBack: () => void; moreHref?: string; moreLabel?: string }) {
+  const { user, requireLogin } = useAuth();
   const [weather, setWeather] = useState<any>(null);
   const [wLoading, setWLoading] = useState(true);
   const [wError, setWError] = useState(false);
   const [water, setWater] = useState<any[] | null>(null);
   const [waterLoading, setWaterLoading] = useState(true);
+
+  // ─── Infos communautaires (héritées de refuges-pyrenees) ───
+  const [contrib, setContrib] = useState<any>(null);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<any>({});
+
   const color = REFUGE_COLORS[refuge.cat] ?? "#8A8578";
+
+  useEffect(() => {
+    setContrib(null); setEditing(false);
+    fetch(`/api/refuges/contrib?id=${encodeURIComponent(refuge.id)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.contribution) setContrib(d.contribution); })
+      .catch(() => {});
+  }, [refuge.id]);
+
+  // Vue effective : données de base + corrections communautaires par-dessus.
+  const eff = useMemo(() => ({
+    ...refuge,
+    eau: contrib?.eau ?? refuge.eau,
+    bois: contrib?.bois ?? refuge.bois,
+    places: contrib?.places ?? refuge.places,
+    alt: contrib?.altitude ?? refuge.alt,
+    desc: contrib?.description ?? refuge.desc,
+  }), [refuge, contrib]);
 
   useEffect(() => {
     setWLoading(true); setWError(false); setWeather(null);
@@ -118,11 +153,38 @@ export default function RefugeDetail({ refuge, onBack, moreHref, moreLabel }: { 
     })();
   }, [refuge.id, refuge.lat, refuge.lon]);
 
-  const mAlt = refuge.alt;
-  const mPlaces = refuge.places;
-  const mDesc = refuge.desc;
-  const eau = fmtBool(refuge.eau);
-  const bois = fmtBool(refuge.bois);
+  function openEdit() {
+    if (!user) { requireLogin(); return; }
+    setForm({
+      eau: fmtBool(eff.eau) === "Oui" ? "Oui" : fmtBool(eff.eau) === "Non" ? "Non" : "",
+      bois: fmtBool(eff.bois) === "Oui" ? "Oui" : fmtBool(eff.bois) === "Non" ? "Non" : "",
+      places: eff.places ?? "",
+      altitude: eff.alt ?? "",
+      description: eff.desc ?? "",
+    });
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    setSaving(true);
+    try {
+      const r = await fetch("/api/refuges/contrib", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refugeId: refuge.id, ...form }),
+      });
+      const d = await r.json();
+      if (r.ok && d?.contribution) { setContrib(d.contribution); setEditing(false); }
+      else alert(d?.error || "Enregistrement impossible.");
+    } catch { alert("Enregistrement impossible."); }
+    setSaving(false);
+  }
+
+  const eau = fmtBool(eff.eau);
+  const bois = fmtBool(eff.bois);
+  const cheminee = fmtBool(refuge.cheminee);
+  const placesTxt = eff.places != null && eff.places !== "" ? String(eff.places) : null;
+  const majDate = fmtDateFr(refuge.majLe);
+  const gr = typeof refuge.rando === "string" && refuge.rando ? refuge.rando.toUpperCase() : null;
 
   return (
     <div className={styles.wrap}>
@@ -132,18 +194,80 @@ export default function RefugeDetail({ refuge, onBack, moreHref, moreLabel }: { 
       </button>
 
       <div className={styles.head}>
-        <span className={styles.typeBadge} style={{ background: color }}>{REFUGE_LABELS[refuge.cat]}</span>
+        <div className={styles.badgeRow}>
+          <span className={styles.typeBadge} style={{ background: color }}>{REFUGE_LABELS[refuge.cat]}</span>
+          {gr && <span className={styles.grBadge} title={`Sur ou proche de l'itinéraire ${gr}`}>{gr}</span>}
+        </div>
         <h2 className={styles.name}>{refuge.nom}</h2>
-        <div className={styles.region}>{refuge.region}{refuge.typeLabel ? ` · ${refuge.typeLabel}` : ""}</div>
+        <div className={styles.region}>
+          {[refuge.ville, refuge.region].filter(Boolean).join(" · ")}
+          {refuge.typeLabel ? ` · ${refuge.typeLabel}` : ""}
+        </div>
       </div>
 
-      {/* Key facts (from the refuges API) */}
+      {/* Key facts — base + community edits */}
       <div className={styles.facts}>
-        <div className={styles.fact}><span className={styles.factVal}>{mAlt ?? "?"}</span><span className={styles.factLbl}>m altitude</span></div>
-        <div className={styles.fact}><span className={styles.factVal}>{mPlaces ?? "?"}</span><span className={styles.factLbl}>places</span></div>
+        <div className={styles.fact}><span className={styles.factVal}>{eff.alt ?? "?"}</span><span className={styles.factLbl}>m altitude</span></div>
+        <div className={styles.fact}>
+          <span className={styles.factVal}>{placesTxt ?? "?"}</span>
+          <span className={styles.factLbl}>{refuge.placesHiver != null && refuge.placesEte !== refuge.placesHiver ? "places été / hiver" : "places"}</span>
+        </div>
         <div className={styles.fact}><span className={styles.factVal} style={{ fontSize: 16 }}>{eau === "Oui" ? "💧" : eau === "Non" ? "✕" : "?"}</span><span className={styles.factLbl}>eau</span></div>
         <div className={styles.fact}><span className={styles.factVal} style={{ fontSize: 16 }}>{bois === "Oui" ? "🪵" : bois === "Non" ? "✕" : "?"}</span><span className={styles.factLbl}>bois</span></div>
       </div>
+      {(cheminee || refuge.couchage) && (
+        <div className={styles.chipRow}>
+          {cheminee && <span className={styles.chip}>🔥 Cheminée : {cheminee}</span>}
+          {refuge.couchage && <span className={styles.chip}>🛏️ Couchage : {refuge.couchage}</span>}
+        </div>
+      )}
+      {Array.isArray(refuge.eauMois) && refuge.eauMois.length > 0 && refuge.eauMois.length < 12 && (
+        <div className={styles.months} title="Mois où l'eau est disponible">
+          {MOIS.map((m, i) => (
+            <span key={m} className={`${styles.month} ${refuge.eauMois.includes(i) ? styles.monthOn : ""}`}>{m[0]}</span>
+          ))}
+          <span className={styles.monthsLbl}>eau selon saison</span>
+        </div>
+      )}
+
+      {/* Community edit (héritée de refuges-pyrenees) */}
+      <div className={styles.editRow}>
+        <button className={styles.editBtn} onClick={openEdit}>
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Corriger les infos
+        </button>
+        {contrib?.updatedBy && <span className={styles.editedBy}>maj par {contrib.updatedBy}</span>}
+      </div>
+
+      {editing && (
+        <div className={styles.editForm}>
+          <div className={styles.editGrid}>
+            <label className={styles.editField}>Eau
+              <select value={form.eau} onChange={e => setForm({ ...form, eau: e.target.value })}>
+                <option value="">?</option><option>Oui</option><option>Non</option>
+              </select>
+            </label>
+            <label className={styles.editField}>Bois
+              <select value={form.bois} onChange={e => setForm({ ...form, bois: e.target.value })}>
+                <option value="">?</option><option>Oui</option><option>Non</option>
+              </select>
+            </label>
+            <label className={styles.editField}>Places
+              <input value={form.places} onChange={e => setForm({ ...form, places: e.target.value })} placeholder="ex. 6 / 4" />
+            </label>
+            <label className={styles.editField}>Altitude (m)
+              <input type="number" value={form.altitude} onChange={e => setForm({ ...form, altitude: e.target.value })} />
+            </label>
+          </div>
+          <label className={styles.editField}>Description
+            <textarea rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="État du lieu, accès, conseils…" />
+          </label>
+          <div className={styles.editActions}>
+            <button className={styles.editCancel} onClick={() => setEditing(false)}>Annuler</button>
+            <button className={styles.editSave} onClick={saveEdit} disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</button>
+          </div>
+        </div>
+      )}
 
       {/* Coordinates */}
       <a className={styles.coords} href={`https://www.openstreetmap.org/?mlat=${refuge.lat}&mlon=${refuge.lon}#map=15/${refuge.lat}/${refuge.lon}`} target="_blank" rel="noopener noreferrer">
@@ -154,7 +278,7 @@ export default function RefugeDetail({ refuge, onBack, moreHref, moreLabel }: { 
 
       {/* Weather */}
       <div className={styles.section}>
-        <div className={styles.sectionTitle}>Météo · {refuge.alt ? `${refuge.alt} m` : "au refuge"}</div>
+        <div className={styles.sectionTitle}>Météo · {eff.alt ? `${eff.alt} m` : "au refuge"}</div>
         {wLoading ? (
           <div className={styles.wLoading}><span className={styles.spin} /> Chargement de la météo…</div>
         ) : wError || !weather?.current ? (
@@ -210,17 +334,29 @@ export default function RefugeDetail({ refuge, onBack, moreHref, moreLabel }: { 
       </div>
 
       {/* Description */}
-      {mDesc && (
+      {eff.desc && (
         <div className={styles.section}>
           <div className={styles.sectionTitle}>À propos</div>
-          <p className={styles.desc}>{mDesc}</p>
+          <p className={styles.desc}>{eff.desc}</p>
+          {majDate && <div className={styles.majLine}>Dernière mise à jour de la fiche : {majDate}{refuge.communaute ? " · enrichie par la communauté" : ""}</div>}
         </div>
       )}
+
+      {/* Livre de passages (hérité de refuges-pyrenees) */}
+      <div className={styles.section}>
+        <div className={styles.sectionTitle}>Livre de passages</div>
+        <CommentsSection targetType="refuge" targetId={refuge.id} placeholder="Vous êtes passé par ici ? État du lieu, eau, bois, affluence…" />
+      </div>
 
       {(moreHref || refuge.lien) && (
         <a className={styles.apiBtn} href={moreHref || refuge.lien} target={moreHref && moreHref.startsWith("/") ? undefined : "_blank"} rel="noopener noreferrer">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          {moreLabel || "Plus d'infos ou modifier ce lieu"}
+          {moreLabel || "Voir la fiche complète"}
+        </a>
+      )}
+      {refuge.lienSource && (
+        <a className={styles.srcLink} href={refuge.lienSource} target="_blank" rel="noopener noreferrer">
+          Fiche d'origine sur pyrenees-refuges.com ↗
         </a>
       )}
 

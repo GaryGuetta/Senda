@@ -1,7 +1,17 @@
-# TrailRate 🏔
+# Senda 🏔
 
-Carte interactive de notation de sentiers de randonnée.  
-Stack : Next.js 14 · PostgreSQL · Prisma · Leaflet · NextAuth
+Randonnée & refuges des Pyrénées : difficulté personnalisée des sentiers, planification multi-jours, et base intégrée de **1 622 refuges, cabanes et abris** des deux versants (fusion du projet refuges-pyrenees).  
+Stack : Next.js 14 · PostgreSQL · Prisma · Leaflet
+
+## Base refuges intégrée
+
+Les données refuges vivent dans `src/data/refuges.json` et sont servies en local par `/api/refuges` — aucune dépendance réseau à l'exécution. Chaque fiche inclut : altitude, places été/hiver, eau, bois, cheminée, couchage, commune, itinéraire (GR…), description, lien vers la fiche d'origine.
+
+- **Corriger les infos** d'un refuge : bouton sur chaque fiche (stocké en base, dernier passage gagne).
+- **Livre de passages** : commentaires + photos sur chaque refuge (compte requis).
+- **Rafraîchir les données** depuis la communauté : `npm run data:refuges`.
+
+Origine des données : pyrenees-refuges.com, enrichies par la communauté refuges-pyrenees. Merci de conserver l'attribution en cas de réutilisation.
 
 ---
 
